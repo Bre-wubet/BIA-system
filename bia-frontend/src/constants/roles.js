@@ -1,0 +1,113 @@
+export const ROLES = {
+  ADMIN: 'admin',
+  MANAGER: 'manager',
+  ANALYST: 'analyst',
+  VIEWER: 'viewer',
+  SALES: 'sales_manager',
+  HR: 'hr_manager',
+  FINANCE: 'finance_manager',
+  OPERATIONS: 'operations_manager'
+};
+
+export const ROLE_PERMISSIONS = {
+  [ROLES.ADMIN]: {
+    canCreate: true,
+    canEdit: true,
+    canDelete: true,
+    canView: true,
+    canShare: true,
+    canExport: true,
+    canManageUsers: true,
+    canConfigureSystem: true
+  },
+  [ROLES.MANAGER]: {
+    canCreate: true,
+    canEdit: true,
+    canDelete: false,
+    canView: true,
+    canShare: true,
+    canExport: true
+  },
+  [ROLES.ANALYST]: {
+    canCreate: true,
+    canEdit: true,
+    canDelete: false,
+    canView: true,
+    canShare: false,
+    canExport: true
+  },
+  [ROLES.VIEWER]: {
+    canCreate: false,
+    canEdit: false,
+    canDelete: false,
+    canView: true,
+    canShare: false,
+    canExport: false // can be true if "report download" is allowed
+  },
+  [ROLES.SALES]: {
+    canCreate: true,
+    canEdit: true,
+    canDelete: false,
+    canView: true,
+    canShare: true,
+    canExport: true
+  },
+  [ROLES.HR]: {
+    canCreate: true,
+    canEdit: true,
+    canDelete: false,
+    canView: true,
+    canShare: true,
+    canExport: true
+  },
+  [ROLES.FINANCE]: {
+    canCreate: true,
+    canEdit: true,
+    canDelete: false,
+    canView: true,
+    canShare: true,
+    canExport: true
+  }
+};
+
+export const ROLE_DASHBOARDS = {
+  [ROLES.ADMIN]: [
+    { key: 'overview', path: '/overview', title: 'System Overview' },
+    { key: 'sales', path: '/dashboards/sales', title: 'Sales Dashboard' },
+    { key: 'hr', path: '/dashboards/hr', title: 'HR Dashboard' },
+    { key: 'finance', path: '/dashboards/finance', title: 'Finance Dashboard' },
+    { key: 'operations', path: '/dashboards/operations', title: 'Operations Dashboard' },
+    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' }
+  ],
+  [ROLES.MANAGER]: [
+    { key: 'overview', path: '/overview', title: 'Overview' },
+    { key: 'sales', path: '/dashboards/sales', title: 'Sales Dashboard' },
+    { key: 'hr', path: '/dashboards/hr', title: 'HR Dashboard' },
+    { key: 'finance', path: '/dashboards/finance', title: 'Finance Dashboard' },
+    { key: 'operations', path: '/dashboards/operations', title: 'Operations Dashboard' }
+  ],
+  [ROLES.ANALYST]: [
+    { key: 'overview', path: '/overview', title: 'Overview' },
+    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' },
+    { key: 'reports', path: '/reports', title: 'Reports' }
+  ],
+  [ROLES.VIEWER]: [
+    { key: 'overview', path: '/overview', title: 'Overview' },
+    { key: 'reports', path: '/reports', title: 'Reports' }
+  ],
+  [ROLES.SALES]: [
+    { key: 'overview', path: '/overview', title: 'Overview' },
+    { key: 'sales', path: '/dashboards/sales', title: 'Sales Dashboard' },
+    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' }
+  ],
+  [ROLES.HR]: [
+    { key: 'overview', path: '/overview', title: 'Overview' },
+    { key: 'hr', path: '/dashboards/hr', title: 'HR Dashboard' },
+    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' }
+  ],
+  [ROLES.FINANCE]: [
+    { key: 'overview', path: '/overview', title: 'Overview' },
+    { key: 'finance', path: '/dashboards/finance', title: 'Finance Dashboard' },
+    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' }
+  ]
+};
