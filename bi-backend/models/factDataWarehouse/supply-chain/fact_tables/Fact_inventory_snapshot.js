@@ -7,7 +7,7 @@ export async function createFactInventoryTable() {
     await database.query(`
       CREATE TABLE IF NOT EXISTS ${FACT_INVENTORY_TABLE} (
         inventory_id SERIAL PRIMARY KEY,
-        product_id BIGINT REFERENCES dim_products(product_id),
+        product_key BIGINT REFERENCES dim_products(id),
         warehouse_id BIGINT REFERENCES dim_warehouses(warehouse_id),
         date_id INT REFERENCES dim_date(date_id),
         quantity INT,

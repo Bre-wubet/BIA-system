@@ -3,7 +3,7 @@ import logger from '../config/logger.js';
 import KPI from '../models/KPI.js';
 import User from '../models/User.js';
 import Dashboard from '../models/Dashboard.js';
-import DashboardWidget from '../models/DashboardWidget.js'
+// import DashboardWidget from '../models/DashboardWidget.js'
 import Report from '../models/Report.js';
 import PredictiveModel from '../models/PredictiveModel.js';
 import Prediction from '../models/Prediction.js';
@@ -56,15 +56,15 @@ const migrate = async () => {
     await Mapping.createMappingRulesTable();
     logger.info('Data integration tables created');
 
+    logger.info('Creating dashboard tables...');
+    await Dashboard.createDashboardTable();
+    // await DashboardWidget.createWidgetTable();
+    logger.info('Dashboard tables created');
+
     logger.info('Creating KPI tables...');
     await KPI.createKpiTable();
     await KpiValue.createKpiValuesTable();
     logger.info('KPI tables created');
-
-    logger.info('Creating dashboard tables...');
-    await Dashboard.createDashboardTable();
-    await DashboardWidget.createWidgetTable();
-    logger.info('Dashboard tables created');
 
     logger.info('Creating reporting tables...');
     await Report.createReportTable();

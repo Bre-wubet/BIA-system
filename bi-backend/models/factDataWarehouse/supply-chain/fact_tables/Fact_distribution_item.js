@@ -9,7 +9,7 @@ export async function createFactDistributionTable() {
         distribution_id SERIAL PRIMARY KEY,
         order_id INT,
         distributor_id BIGINT REFERENCES dim_distributors(distributor_id),
-        product_id BIGINT REFERENCES dim_products(product_id),
+        product_key BIGINT REFERENCES dim_products(id),
         logistics_provider_id BIGINT REFERENCES dim_logistics_providers(provider_id),
         date_id BIGINT REFERENCES dim_date(date_id),
         quantity INT,

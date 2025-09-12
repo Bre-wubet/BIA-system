@@ -7,6 +7,7 @@ const KpiValue = {
         id SERIAL PRIMARY KEY,
         kpi_id INT REFERENCES kpis(id),
         value NUMERIC NOT NULL,
+        breakdown JSONB,
         calculated_at TIMESTAMP DEFAULT NOW()
       );
     `;

@@ -7,6 +7,7 @@ async function createReportTable() {
     CREATE TABLE IF NOT EXISTS ${tableName} (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
+      type VARCHAR(255) NOT NULL,
       category VARCHAR(100),
       involved_modules VARCHAR,
       query_config JSONB NOT NULL,

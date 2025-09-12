@@ -8,7 +8,7 @@ import {
   deleteDashboard,
   setDefaultDashboard
 } from '../../../api/dashboardsApi';
-import { getAllWidgets } from '../../../api/widgetsApi';
+// import { getAllWidgets } from '../../../api/widgetsApi';
 import { DASHBOARD_TEMPLATES } from '../../../constants/chartConfig';
 import { ROLE_DASHBOARDS, ROLES } from '../../../constants/roles';
 import Card from '../../../components/ui/Card';
@@ -20,7 +20,7 @@ import { ROLE_PERMISSIONS } from '../../../constants/roles';
 import { MdEdit, MdDelete, MdControlPointDuplicate} from 'react-icons/md';
 const DashboardsPage = () => {
   const [dashboards, setDashboards] = useState([]);
-  const [widgets, setWidgets] = useState([]); // Assuming widgets are fetched from an API
+  // const [widgets, setWidgets] = useState([]); // Assuming widgets are fetched from an API
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -44,18 +44,18 @@ const DashboardsPage = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchWidgets = async () => {
-      try {
-        const res = await getAllWidgets();
-        setWidgets(res.data || []);
-      } catch (error) {
-        console.error('Error fetching widgets:', error);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchWidgets = async () => {
+  //     try {
+  //       const res = await getAllWidgets();
+  //       setWidgets(res.data || []);
+  //     } catch (error) {
+  //       console.error('Error fetching widgets:', error);
+  //     }
+  //   };
 
-    fetchWidgets();
-  }, []);
+  //   fetchWidgets();
+  // }, []);
 
   const fetchDashboardStats = async () => {
     try {
@@ -229,7 +229,7 @@ const DashboardsPage = () => {
             </svg>
           }
         />
-        <KPIWidget
+        {/* <KPIWidget
           title="Total Widgets"
           value={widgets.reduce((total, widget) => total + (widget.dashboard?.length || 0), 0) || 0}
           icon={
@@ -237,7 +237,7 @@ const DashboardsPage = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
           }
-        />
+        /> */}
       </div>
 
       {/* Dashboards Grid */}

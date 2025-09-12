@@ -8,7 +8,7 @@ export async function createFactProcurementTable() {
       CREATE TABLE IF NOT EXISTS ${FACT_PROCUREMENT_TABLE} (
         procurement_id SERIAL PRIMARY KEY,
         po_id INT,
-        product_id BIGINT REFERENCES dim_products(product_id),
+        product_key BIGINT REFERENCES dim_products(id),
         supplier_id BIGINT REFERENCES dim_suppliers(supplier_id),
         date_id BIGINT REFERENCES dim_date(date_id),
         quantity INT,

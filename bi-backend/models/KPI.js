@@ -42,7 +42,7 @@ async function createKpi(kpiData) {
   const query = `
     INSERT INTO ${tableName} 
     (name, description, category, formula, type, unit, target_value, refresh_frequency, dashboard_id, created_by)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     RETURNING *
   `;
   const values = [name, description, category, formula, type, unit, target_value, refresh_frequency, dashboard_id, created_by];

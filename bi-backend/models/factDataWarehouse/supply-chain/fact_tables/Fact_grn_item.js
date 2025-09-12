@@ -9,7 +9,7 @@ export async function createFactGoodsReceiptTable() {
         receipt_id SERIAL PRIMARY KEY,
         grn_id INT,
         po_id INT,
-        product_id BIGINT REFERENCES dim_products(product_id),
+        product_key BIGINT REFERENCES dim_products(id),
         warehouse_id BIGINT REFERENCES dim_warehouses(warehouse_id),
         date_id BIGINT REFERENCES dim_date(date_id),
         quantity_received INT,

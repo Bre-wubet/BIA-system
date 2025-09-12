@@ -8,7 +8,7 @@ export async function createFactStockMovementsTable() {
       CREATE TABLE IF NOT EXISTS ${FACT_STOCK_MOVEMENTS_TABLE} (
         movement_id SERIAL PRIMARY KEY,
         transfer_id INT,
-        product_id BIGINT REFERENCES dim_products(product_id),
+        product_key BIGINT REFERENCES dim_products(id),
         from_warehouse_id BIGINT REFERENCES dim_warehouses(warehouse_id),
         to_warehouse_id BIGINT REFERENCES dim_warehouses(warehouse_id),
         date_id BIGINT REFERENCES dim_date(date_id),

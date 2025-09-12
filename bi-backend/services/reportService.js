@@ -10,7 +10,7 @@ export function createReportService() {
   // ---------------- Core CRUD ----------------
   async function createReport(reportData) {
     try {
-      const report = await Report.create(reportData);
+      const report = await Report.createReport(reportData);
       logger.info(`Report created: ${report.id}`);
       return report;
     } catch (error) {
@@ -54,7 +54,7 @@ export function createReportService() {
 
   async function updateReport(id, updateData) {
     try {
-      const report = await Report.update(id, updateData);
+      const report = await Report.updateReport(id, updateData);
       logger.info(`Report updated: ${id}`);
       return report;
     } catch (error) {
@@ -65,7 +65,7 @@ export function createReportService() {
 
   async function deleteReport(id) {
     try {
-      const deleted = await Report.delete(id);
+      const deleted = await Report.deleteReport(id);
       if (deleted) logger.info(`Report deleted: ${id}`);
       return deleted;
     } catch (error) {
@@ -89,99 +89,208 @@ export function createReportService() {
   }
 
   // ---------------- Execution ----------------
+
+  // Unified runner
+  async function runReport(id, options = {}) {
+    const { format = 'json', filters = {} } = options;
+
+    try {
+      // 1. Fetch report definition
+      const report = await Report.findById(id);
+      if (!report) {
+        logger.warn(`Report with id ${id} not found`);
+        return null;
+      }
+
+      // 2. Execute query based on report type
+      const reportData = await executeReportQuery(report, filters);
+
+      // 3. Format output
+      return await formatReportOutput(reportData, format, report.name);
+    } catch (error) {
+      logger.error(`Error running report [${id}] with format ${options.format}:`, error);
+      throw error;
+    }
+  }
+
+  // For one-off generation (e.g., API call)
   async function generateReport(id, options = {}) {
-    try {
-      const { format = 'json', filters = {} } = options;
-      const report = await Report.findById(id);
-
-      if (!report) return null;
-
-      const reportData = await executeReportQuery(report, filters);
-
-      return format === 'csv'
-        ? csvExporter.convertToCSV(reportData)
-        : reportData;
-    } catch (error) {
-      logger.error('Error generating report:', error);
-      throw error;
-    }
+    return runReport(id, options);
   }
 
+  // For executions that need auditing/logging
   async function executeReport(id, options = {}) {
-    try {
-      const { format = 'json', filters = {} } = options;
-      const report = await Report.findById(id);
-
-      if (!report) return null;
-
-      const reportData = await executeReportQuery(report, filters);
-
-      await logReportExecution(id, 'executed', { format, filters });
-
-      return format === 'csv'
-        ? csvExporter.convertToCSV(reportData)
-        : reportData;
-    } catch (error) {
-      logger.error('Error executing report:', error);
-      throw error;
-    }
+    const result = await runReport(id, options);
+    await logReportExecution(id, 'executed', options);
+    return result;
   }
+
+  // ---------------- Query Dispatcher ----------------
 
   async function executeReportQuery(report, filters) {
     const { type, query_config } = report;
 
     switch (type) {
-      case 'sales': return generateSalesReport(query_config, filters);
-      case 'finance': return generateFinanceReport(query_config, filters);
-      case 'hr': return generateHRReport(query_config, filters);
-      case 'operations': return generateOperationsReport(query_config, filters);
-      case 'analytics': return generateAnalyticsReport(query_config, filters);
-      default: return generateGenericReport(query_config, filters);
+      case 'sales':
+        return generateSalesReport(query_config, filters);
+      case 'finance':
+        return generateFinanceReport(query_config, filters);
+      case 'hr':
+        return generateHRReport(query_config, filters);
+      case 'operations':
+        return generateOperationsReport(query_config, filters);
+      case 'analytics':
+        return generateAnalyticsReport(query_config, filters);
+      default:
+        logger.info(`Falling back to generic report handler for type: ${type}`);
+        return generateGenericReport(query_config, filters);
     }
   }
 
-  // ---------------- Generators (Mocks) ----------------
-  async function generateSalesReport(config, filters) {
-    return {
-      reportType: 'sales',
-      generatedAt: new Date().toISOString(),
-      data: {
-        totalSales: 1250000,
-        salesGrowth: 15.5,
-        topProducts: [
-          { name: 'Product A', sales: 250000, growth: 12.3 },
-          { name: 'Product B', sales: 180000, growth: 8.7 },
-          { name: 'Product C', sales: 150000, growth: 22.1 }
-        ],
-        salesByRegion: [
-          { region: 'North', sales: 450000 },
-          { region: 'South', sales: 380000 },
-          { region: 'East', sales: 320000 },
-          { region: 'West', sales: 100000 }
-        ]
-      }
-    };
+  // ---------------- Formatter ----------------
+  async function formatReportOutput(reportData, format, reportName = 'Report') {
+    switch (format.toLowerCase()) {
+      case 'csv':
+        return csvExporter.convertToCSV(reportData);
+      case 'pdf':
+        return await pdfExporter.convertToPDF(reportData, reportName);
+      case 'xlsx':
+        return await excelExporter.convertToExcel(reportData, reportName);
+      case 'json':
+      default:
+        return reportData;
+    }
   }
 
-  async function generateFinanceReport(config, filters) {
-    return { reportType: 'finance', generatedAt: new Date().toISOString(), data: { netProfit: 650000 } };
+// ---------------- Generators ----------------
+
+// Sales Report
+async function generateSalesReport(config, filters) {
+  const { date_range, region } = filters;
+
+  let query = `
+    SELECT region,
+           SUM(amount) AS total_sales,
+           COUNT(*) AS total_orders
+    FROM sales
+    WHERE 1=1
+  `;
+
+  const values = [];
+  let paramIndex = 1;
+
+  if (date_range?.from && date_range?.to) {
+    query += ` AND created_at BETWEEN $${paramIndex++} AND $${paramIndex++}`;
+    values.push(date_range.from, date_range.to);
   }
 
-  async function generateHRReport(config, filters) {
-    return { reportType: 'hr', generatedAt: new Date().toISOString(), data: { totalEmployees: 150 } };
+  if (region?.length) {
+    query += ` AND region = ANY($${paramIndex++})`;
+    values.push(region);
   }
 
-  async function generateOperationsReport(config, filters) {
-    return { reportType: 'operations', generatedAt: new Date().toISOString(), data: { efficiency: 87.5 } };
+  query += ` GROUP BY region ORDER BY total_sales DESC`;
+
+  const { rows } = await database.query(query, values);
+
+  return {
+    reportType: 'sales',
+    generatedAt: new Date().toISOString(),
+    data: rows
+  };
+}
+
+// Finance Report
+async function generateFinanceReport(config, filters) {
+  const query = `
+    SELECT SUM(revenue) - SUM(expense) AS net_profit,
+           SUM(revenue) AS total_revenue,
+           SUM(expense) AS total_expense
+    FROM finance_transactions
+    WHERE date BETWEEN $1 AND $2
+  `;
+  const { rows } = await database.query(query, [filters.from, filters.to]);
+
+  return {
+    reportType: 'finance',
+    generatedAt: new Date().toISOString(),
+    data: rows[0]
+  };
+}
+
+// HR Report
+async function generateHRReport(config, filters) {
+  const { department } = filters;
+
+  let query = `SELECT department, COUNT(*) AS total_employees FROM employees WHERE status = 'active'`;
+  const values = [];
+
+  if (department) {
+    query += ` AND department = $1`;
+    values.push(department);
   }
 
-  async function generateAnalyticsReport(config, filters) {
-    return { reportType: 'analytics', generatedAt: new Date().toISOString(), data: { kpis: { totalKPIs: 25 } } };
-  }
+  query += ` GROUP BY department`;
 
-  async function generateGenericReport(config, filters) {
-    return { reportType: 'generic', generatedAt: new Date().toISOString(), data: { config, filters } };
-  }
+  const { rows } = await database.query(query, values);
+
+  return {
+    reportType: 'hr',
+    generatedAt: new Date().toISOString(),
+    data: rows
+  };
+}
+
+// Operations Report
+async function generateOperationsReport(config, filters) {
+  const query = `
+    SELECT machine_id, AVG(uptime_percent) AS avg_efficiency
+    FROM operations_log
+    WHERE timestamp BETWEEN $1 AND $2
+    GROUP BY machine_id
+  `;
+  const { rows } = await database.query(query, [filters.from, filters.to]);
+
+  return {
+    reportType: 'operations',
+    generatedAt: new Date().toISOString(),
+    data: rows
+  };
+}
+
+// Analytics Report (Cross-module KPIs)
+async function generateAnalyticsReport(config, filters) {
+  // Example: join sales & marketing performance
+  const query = `
+    SELECT c.campaign_name,
+           SUM(s.amount) AS sales_generated,
+           COUNT(s.id) AS orders_count
+    FROM campaigns c
+    LEFT JOIN sales s ON c.id = s.campaign_id
+    WHERE c.start_date >= $1 AND c.end_date <= $2
+    GROUP BY c.campaign_name
+  `;
+  const { rows } = await database.query(query, [filters.from, filters.to]);
+
+  return {
+    reportType: 'analytics',
+    generatedAt: new Date().toISOString(),
+    data: rows
+  };
+}
+
+// Fallback Generic Report (executes query_config directly)
+async function generateGenericReport(config, filters) {
+  // Assume config already contains raw SQL
+  const { sql, params } = buildSQLFromConfig(config, filters);
+  const { rows } = await database.query(sql, params);
+
+  return {
+    reportType: 'generic',
+    generatedAt: new Date().toISOString(),
+    data: rows
+  };
+}
 
   // ---------------- Scheduling ----------------
   async function updateSchedule(id, schedule) {

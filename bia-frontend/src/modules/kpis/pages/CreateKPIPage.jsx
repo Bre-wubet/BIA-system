@@ -21,7 +21,7 @@ const CreateNewKPI = () => {
     unit: "",
     target_value: 1,
     refresh_frequency: 3600,
-    dashboard_id: 1,
+    dashboard_id: "",
     created_by: 1, // TODO: replace with logged-in user ID from context/auth
   });
 
@@ -239,12 +239,20 @@ useEffect(() => {
               {/* Dashboard Selection */}
             <div>
               <label className="block font-medium text-gray-700 mb-1">Dashboard</label>
-              <select value={formData.dashboard_id}
-                  onChange={handleChange} className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
+              <select
+                name="dashboard_id"   // ✅ Add this
+                value={formData.dashboard_id}
+                onChange={handleChange}
+                className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- Select Dashboard --</option> {/* Optional placeholder */}
                 {dashboards.map((db) => (
-                  <option key={db.id} value={db.id}>{db.name}</option>
+                  <option key={db.id} value={db.id}>
+                    {db.name}
+                  </option>
                 ))}
               </select>
+
             </div>
           </div>
 

@@ -284,19 +284,19 @@ export async function getDashboardStats(userId) {
     const stats = statsResult.rows[0];
 
     // Get kpi count
-    const widgetQuery = `
-      SELECT COUNT(*) as total_widgets
-      FROM widgets w
+    const kpiQuery = `
+      SELECT COUNT(*) as total_kpis
+      FROM kpis w
       JOIN dashboards d ON w.dashboard_id = d.id
       WHERE (d.user_id = $1 OR d.is_public = true) AND w.is_active = true
     `;
     
-    const widgetResult = await database.query(widgetQuery, [userId]);
-    const widgetCount = widgetResult.rows[0];
+    const kpiResult = await database.query(kpiQuery, [userId]);
+    const kpiCount = kpiResult.rows[0];
 
     return { 
       success: true, 
-      data: { ...stats, ...widgetCount } 
+      data: { ...stats, ...kpiCount } 
     };
   } catch (error) {
     logger.error('Error getting dashboard stats:', error);
