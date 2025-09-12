@@ -39,7 +39,7 @@ import { createFactDistributionKpisTable } from '../models/factDataWarehouse/sup
 import { createProductsTable } from '../models/test_tables/Products.js';
 import { createSuppliersTable } from '../models/test_tables/Suppliers.js';
 import { createPurchaseOrdersTable } from '../models/test_tables/Products.js';
-import { createPurchaseOrderItemTable } from '../models/test_tables/Products.js';
+import { createPurchaseOrderItemsTable } from '../models/test_tables/Products.js';
 const migrate = async () => {
   try {
     logger.info('Starting database migration...');
@@ -107,7 +107,7 @@ const migrate = async () => {
     await createProductsTable();
     await createSuppliersTable();
     await createPurchaseOrdersTable();
-    await createPurchaseOrderItemTable();
+    await createPurchaseOrderItemsTable();
     logger.info('Test tables created successfully!')
     
     logger.info('All tables and materialized views created successfully!');
