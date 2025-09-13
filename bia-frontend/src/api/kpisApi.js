@@ -13,7 +13,10 @@ const apiPaths = {
   KPI_VALUES: (id) => `${BASE_URL}/kpis/${id}/values`,
   KPI_LATEST_VALUE: (id) => `${BASE_URL}/kpis/${id}/latest-value`,
   KPI_VALUES_HISTORY: (id) => `${BASE_URL}/kpis/${id}/history-values`,
-  BATCH_CALCULATE: `${BASE_URL}/kpis/batch`
+  BATCH_CALCULATE: `${BASE_URL}/kpis/batch`,
+  KPI_ANALYTICS: `${BASE_URL}/kpis/analytics`,
+  KPI_PREDICTIONS: `${BASE_URL}/kpis/predictions`,
+  KPI_ALERTS: `${BASE_URL}/kpis/alerts`
 };
 
 // KPI CRUD operations
@@ -143,6 +146,36 @@ export const getKPIValuesHistory = async (id, limit = 100) => {
 export const batchCalculateKPIs = async () => {
   try {
     const response = await axios.post(apiPaths.BATCH_CALCULATE);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// KPI Analytics
+export const getKPIAnalytics = async () => {
+  try {
+    const response = await axios.get(apiPaths.KPI_ANALYTICS);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// KPI Predictions
+export const getKPIPredictions = async () => {
+  try {
+    const response = await axios.get(apiPaths.KPI_PREDICTIONS);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// KPI Alerts
+export const getKPIAlerts = async () => {
+  try {
+    const response = await axios.get(apiPaths.KPI_ALERTS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

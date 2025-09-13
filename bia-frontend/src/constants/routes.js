@@ -27,7 +27,7 @@ export const ROUTES = {
   KPIS: '/kpis',
   NEW_KPI: '/kpis/new-kpi',
   KPI_DETAIL: '/kpis/:id/detail',
-
+  KPI_EDIT: '/kpis/:id/edit',
   WIDGETS: '/widgets',
   WIDGET_DETAIL: '/widgets/:id',
   WIDGET_NEW: '/widgets/new',
@@ -47,9 +47,30 @@ export const ROUTES = {
 
   // Reports
   REPORTS: '/reports',
+  REPORTS_NEW: '/reports/new',
+  REPORTS_DETAIL: '/reports/:id',
+  REPORTS_EDIT: '/reports/:id/edit',
+  REPORTS_TEMPLATES: '/reports/templates',
+
+  // Exports
+  EXPORTS: '/exports',
+  EXPORTS_NEW: '/exports/new',
+  EXPORTS_DETAIL: '/exports/:id',
+  EXPORTS_EDIT: '/exports/:id/edit',
+  EXPORTS_HISTORY: '/exports/history',
+  EXPORTS_TEMPLATES: '/exports/templates',
 
   // Settings
   SETTINGS: '/settings',
+  SETTINGS_GENERAL: '/settings',
+  SETTINGS_USERS: '/settings/users',
+  SETTINGS_SECURITY: '/settings/security',
+  SETTINGS_NOTIFICATIONS: '/settings/notifications',
+  SETTINGS_APPEARANCE: '/settings/appearance',
+  SETTINGS_DATA: '/settings/data',
+  SETTINGS_API: '/settings/api',
+  SETTINGS_INTEGRATIONS: '/settings/integrations',
+  SETTINGS_SYSTEM: '/settings/system',
   PROFILE: '/profile',
 
   // Errors
@@ -224,10 +245,17 @@ export const NAVIGATION_ITEMS = [
   },
   {
     title: 'Export Center',
-    path: ROUTES.REPORTS,
-    icon: 'assessment',
+    path: ROUTES.EXPORTS,
+    icon: 'file_download',
     section: 'reports',
     roles: [ROLES.FINANCE]
+  },
+  {
+    title: 'Exports',
+    path: ROUTES.EXPORTS,
+    icon: 'file_download',
+    section: 'reports',
+    roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.OPERATIONS]
   },
   
   // --- Settings Section ---

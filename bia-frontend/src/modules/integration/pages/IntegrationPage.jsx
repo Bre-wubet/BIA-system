@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   getAllDataSources,
@@ -7,27 +7,83 @@ import {
   testConnection,
   deleteDataSource,
   syncMultipleDataSources,
-  getDataSourcesByModuleAndType
+  getDataSourcesByModuleAndType,
+  getSyncQueue,
+  getIntegrationLogs
 } from "../../../api/integrationApi";
 import MappingRuleList from '../components/MappingRuleList';
+import Modal from '../../../components/ui/Modal';
 import Button from "../../../components/ui/Button";
-import { MdDelete, MdEdit, MdSync, MdCastConnected, MdQueue, MdList} from "react-icons/md";
+import Card from "../../../components/ui/Card";
+import LoadingSpinner from "../../../components/ui/LoadingSpinner";
+import Alert from "../../../components/ui/Alert";
+import Badge from "../../../components/ui/Badge";
+import Tooltip from "../../../components/ui/Tooltip";
+import EmptyState from "../../../components/ui/EmptyState";
+import SearchInput from "../../../components/ui/SearchInput";
+import FilterDropdown from "../../../components/ui/FilterDropdown";
+import { 
+  MdDelete, 
+  MdEdit, 
+  MdSync, 
+  MdCastConnected, 
+  MdQueue, 
+  MdList,
+  MdRefresh,
+  MdAdd,
+  MdSearch,
+  MdFilterList,
+  MdViewModule,
+  MdViewList,
+  MdMoreVert,
+  MdWarning,
+  MdCheckCircle,
+  MdError,
+  MdAnalytics,
+  MdSpeed,
+  MdSchedule,
+  MdVisibility,
+  MdContentCopy,
+  MdDownload,
+  MdSettings,
+  MdTrendingUp,
+  MdTrendingDown,
+  MdHistory,
+  MdInsights,
+  MdDataUsage,
+  MdStorage,
+  MdCloudSync,
+  MdSyncProblem,
+  MdCheckCircleOutline,
+  MdRule
+} from "react-icons/md";
 
   const IntegrationPage = () => {
     const defaultFilters = {
-    module_name: "",
-    type: ""
-  };
+      module_name: "",
+      type: "",
+      status: ""
+    };
 
-  const [filters, setFilters] = useState(defaultFilters);
-  const [dataSources, setDataSources] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [syncQueue, setSyncQueue] = useState([]);
-  const [activeDataSources, setActiveDataSources] = useState([]);
-  const [dataSourcesNeedingSync, setDataSourcesNeedingSync] = useState([]);
-  const [showMapping, setShowMapping] = useState(false);
-  const navigate = useNavigate();
+    const [filters, setFilters] = useState(defaultFilters);
+    const [dataSources, setDataSources] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState(null);
+    const [syncQueue, setSyncQueue] = useState([]);
+    const [activeDataSources, setActiveDataSources] = useState([]);
+    const [dataSourcesNeedingSync, setDataSourcesNeedingSync] = useState([]);
+    const [showMapping, setShowMapping] = useState(false);
+    const [selectedDataSourceId, setSelectedDataSourceId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [viewMode, setViewMode] = useState('grid');
+    const [showFilters, setShowFilters] = useState(false);
+    const [sortBy, setSortBy] = useState('name');
+    const [sortOrder, setSortOrder] = useState('asc');
+    const [selectedDataSource, setSelectedDataSource] = useState(null);
+    const [integrationLogs, setIntegrationLogs] = useState([]);
+    const [analytics, setAnalytics] = useState({});
+    const navigate = useNavigate();
 
   // fetch data (always driven by filters)
   const fetchDataSources = async (filtersToApply = defaultFilters) => {
@@ -54,9 +110,76 @@ import { MdDelete, MdEdit, MdSync, MdCastConnected, MdQueue, MdList} from "react
     }
   };
 
+  const fetchSyncQueue = async () => {
+    try {
+      const queue = await getSyncQueue();
+      setSyncQueue(Array.isArray(queue) ? queue : []);
+    } catch (err) {
+      console.error("Error fetching sync queue:", err);
+      setSyncQueue([]);
+    }
+  };
+
+  const fetchIntegrationLogs = async () => {
+    try {
+      const logs = await getIntegrationLogs();
+      setIntegrationLogs(logs || []);
+    } catch (err) {
+      console.error("Error fetching integration logs:", err);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      // Calculate analytics from data sources
+      const total = dataSources.length;
+      const active = dataSources.filter(ds => ds.status === 'active').length;
+      const inactive = dataSources.filter(ds => ds.status === 'inactive').length;
+      const error = dataSources.filter(ds => ds.status === 'error').length;
+      const pending = dataSources.filter(ds => ds.status === 'pending').length;
+      
+      setAnalytics({
+        total,
+        active,
+        inactive,
+        error,
+        pending,
+        successRate: total > 0 ? ((active / total) * 100).toFixed(1) : 0,
+        lastSync: dataSources.reduce((latest, ds) => {
+          if (!ds.last_sync) return latest;
+          const syncDate = new Date(ds.last_sync);
+          return !latest || syncDate > latest ? syncDate : latest;
+        }, null)
+      });
+    } catch (err) {
+      console.error("Error calculating analytics:", err);
+    }
+  };
+
   useEffect(() => {
     fetchDataSources();
   }, []);
+
+  useEffect(() => {
+    if (dataSources.length > 0) {
+      fetchSyncQueue();
+      fetchIntegrationLogs();
+      fetchAnalytics();
+    }
+  }, [dataSources]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!refreshing) {
+        fetchDataSources(filters);
+        fetchSyncQueue();
+        fetchIntegrationLogs();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [refreshing, filters]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -74,6 +197,96 @@ import { MdDelete, MdEdit, MdSync, MdCastConnected, MdQueue, MdList} from "react
     setFilters(defaultFilters);
     fetchDataSources(defaultFilters);
   };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchDataSources(filters),
+        fetchSyncQueue(),
+        fetchIntegrationLogs()
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+  };
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const handleMappingRules = (dataSourceId) => {
+    setSelectedDataSourceId(dataSourceId);
+    setShowMapping(true);
+  };
+
+  const handleCloseMappingModal = () => {
+    setShowMapping(false);
+    setSelectedDataSourceId(null);
+  };
+
+  // Filter and search data sources
+  const filteredDataSources = useMemo(() => {
+    let filtered = dataSources;
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(ds => 
+        ds.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ds.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ds.type.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (filters.status) {
+      filtered = filtered.filter(ds => ds.status === filters.status);
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+      
+      if (sortBy === 'last_sync') {
+        aValue = aValue ? new Date(aValue) : new Date(0);
+        bValue = bValue ? new Date(bValue) : new Date(0);
+      }
+      
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [dataSources, searchTerm, filters.status, sortBy, sortOrder]);
+
+  // Get unique modules and types for filters
+  const modules = useMemo(() => {
+    const uniqueModules = [...new Set(dataSources.map(ds => ds.module?.module_name).filter(Boolean))];
+    return uniqueModules;
+  }, [dataSources]);
+
+  const types = useMemo(() => {
+    const uniqueTypes = [...new Set(dataSources.map(ds => ds.type).filter(Boolean))];
+    return uniqueTypes;
+  }, [dataSources]);
 
   // const fetchFilteredDataSources = async () => {
   //   try {
@@ -174,6 +387,7 @@ import { MdDelete, MdEdit, MdSync, MdCastConnected, MdQueue, MdList} from "react
   };
 
   const getSyncStatusBadge = (source) => {
+    if (!Array.isArray(syncQueue)) return null;
     const item = syncQueue.find((i) => i.data_source_id === source.id);
     if (!item) return null;
     const statusMap = {
@@ -191,190 +405,441 @@ import { MdDelete, MdEdit, MdSync, MdCastConnected, MdQueue, MdList} from "react
     );
   };
 
-  if (loading) return <div className="p-4">Loading integration data...</div>;
+  if (loading) {
+    return <LoadingSpinner size="large" message="Loading integration data..." />;
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl text-blue-800 font-bold">Data Integration</h1>
-        <div className="space-x-2">
-          <Button
-            onClick={() => navigate("/integration/data-sync")}
-            variant="primary"
-          >
-            Data Sync
-          </Button>
-          <Button
-            onClick={() => navigate("/integration/import-export")}
-            variant="secondary"
-          >
-            Import/Export
-          </Button>
-          <Button
-            onClick={() => navigate("/integration/new-source")}
-            variant="primary"
-          >
-            Add Data Source
-          </Button>
-        </div>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <MdList className="w-4 h-4 text-blue-600" />
+      {/* Enhanced Header */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900">Data Integration</h1>
+              <Badge variant="blue" icon={<MdCloudSync className="w-3 h-3" />}>
+                {analytics.successRate}% Success Rate
+              </Badge>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Sources</p>
-              <p className="text-2xl font-semibold text-gray-900">{dataSources.length}</p>
+            <p className="text-gray-600 mb-3">Manage and monitor your data sources and integrations</p>
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span className="flex items-center gap-1">
+                <MdStorage className="text-blue-500" />
+                {analytics.total} Total Sources
+              </span>
+              <span className="flex items-center gap-1">
+                <MdCheckCircle className="text-green-500" />
+                {analytics.active} Active
+              </span>
+              <span className="flex items-center gap-1">
+                <MdSyncProblem className="text-orange-500" />
+                {analytics.error} Errors
+              </span>
+              <span className="flex items-center gap-1">
+                <MdSchedule className="text-purple-500" />
+                Last sync: {analytics.lastSync ? new Date(analytics.lastSync).toLocaleTimeString() : 'Never'}
+              </span>
             </div>
           </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <MdCastConnected className="w-4 h-4 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Sources</p>
-              <p className="text-2xl font-semibold text-gray-900">{dataSources.filter(ds => ds.status === 'active').length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <MdSync className="w-4 h-4 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Need Sync</p>
-              <p className="text-2xl font-semibold text-gray-900">{dataSources.filter(ds => ds.status === 'inactive').length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <MdQueue className="w-4 h-4 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Sync Queue</p>
-              <p className="text-2xl font-semibold text-gray-900">{syncQueue.length}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Filter Controls */}
-      <div className="bg-white p-4 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-        {/* Module Select */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Module</label>
-          <select
-            name="module_name"
-            value={filters.module_name}
-            onChange={handleFilterChange}
-            className="w-full border border-gray-300 rounded-md shadow-sm px-2 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">All Modules</option>
-            <option value="sales">Sales</option>
-            <option value="finance">Finance</option>
-            <option value="hr">HR</option>
-            <option value="supply chain">Supply Chain</option>
-            <option value="production">Production</option>
-            <option value="procurement">Procurement</option>
-            <option value="crm">CRM</option>
-          </select>
-        </div>
-
-        {/* Type Select */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-          <select
-            name="type"
-            value={filters.type}
-            onChange={handleFilterChange}
-            className="w-full border border-gray-300 rounded-md shadow-sm px-2 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">All Types</option>
-            <option value="internal_module">Internal Module</option>
-            <option value="postgres">Postgres</option>
-            <option value="mongodb">MongoDB</option>
-            <option value="api">API</option>
-          </select>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2 justify-start md:justify-end">
-          <Button
-            onClick={handleApplyFilters}
-            variant="primary"
-            disabled={loading}
-          >
-            {loading ? "Filtering..." : "Apply Filter"}
-          </Button>
-          <Button
-            onClick={handleResetFilters}
-            variant="secondary"
-            disabled={!filters.type && !filters.module_name}
-          >
-            Reset
-          </Button>
-        </div>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-      {/* Data Sources Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="p-4 border-b flex items-center justify-between">
-          <h3 className="text-lg font-medium">Data Sources</h3>
-          {dataSourcesNeedingSync.length > 0 && (
-            <button
-              onClick={handleBatchSync}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm"
+          <div className="flex items-center gap-2">
+            <Tooltip content="Refresh data">
+              <Button 
+                onClick={handleRefresh} 
+                variant="outline" 
+                size="sm"
+                disabled={refreshing}
+              >
+                <MdRefresh className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </Tooltip>
+            <Button
+              onClick={() => navigate("/integration/data-sync")}
+              variant="outline"
+              size="sm"
             >
-              Sync All ({dataSourcesNeedingSync.length})
-            </button>
-          )}
+              <MdSync className="w-4 h-4 mr-1" />
+              Data Sync
+            </Button>
+            <Button
+              onClick={() => navigate("/integration/import-export")}
+              variant="outline"
+              size="sm"
+            >
+              <MdDownload className="w-4 h-4 mr-1" />
+              Import/Export
+            </Button>
+            <Button
+              onClick={() => navigate("/integration/new-source")}
+              variant="primary"
+              size="sm"
+            >
+              <MdAdd className="w-4 h-4 mr-1" />
+              Add Data Source
+            </Button>
+          </div>
         </div>
-        {dataSources.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <p className="mb-4">No data sources found.</p>
-            <Link to="/integration/new-source" className="text-blue-600 hover:underline">
-              Add one
-            </Link>
+      </div>
+
+      {/* Error Alert */}
+      {error && (
+        <Alert
+          type="error"
+          title="Error Loading Data"
+          message={error}
+          action={
+            <Button onClick={handleRefresh} variant="primary">
+              Retry
+            </Button>
+          }
+        />
+      )}
+
+      {/* Analytics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="hover:shadow-lg transition-shadow duration-200">
+          <div>
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <MdStorage className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Sources</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics.total}</p>
+                <p className="text-xs text-gray-500">All data sources</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow duration-200">
+          <div>
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-lg">
+                <MdCheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Active Sources</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics.active}</p>
+                <p className="text-xs text-gray-500">Running smoothly</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow duration-200">
+          <div>
+            <div className="flex items-center">
+              <div className="p-3 bg-orange-100 rounded-lg">
+                <MdSyncProblem className="w-6 h-6 text-orange-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Need Attention</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics.error + analytics.pending}</p>
+                <p className="text-xs text-gray-500">Errors + Pending</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow duration-200">
+          <div>
+            <div className="flex items-center">
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <MdQueue className="w-6 h-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Sync Queue</p>
+                <p className="text-2xl font-bold text-gray-900">{Array.isArray(syncQueue) ? syncQueue.length : 0}</p>
+                <p className="text-xs text-gray-500">Pending syncs</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+      {/* Search and Filter Controls */}
+      <Card>
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <div className="flex-1 max-w-md">
+              <SearchInput
+                placeholder="Search data sources..."
+                value={searchTerm}
+                onChange={handleSearch}
+                icon={<MdSearch className="w-4 h-4" />}
+              />
+            </div>
+            <div className="flex gap-2">
+              <FilterDropdown
+                label="Module"
+                value={filters.module_name}
+                onChange={(value) => setFilters(prev => ({ ...prev, module_name: value }))}
+                options={[
+                  { value: '', label: 'All Modules' },
+                  ...modules.map(module => ({ value: module, label: module.charAt(0).toUpperCase() + module.slice(1) }))
+                ]}
+              />
+              <FilterDropdown
+                label="Type"
+                value={filters.type}
+                onChange={(value) => setFilters(prev => ({ ...prev, type: value }))}
+                options={[
+                  { value: '', label: 'All Types' },
+                  ...types.map(type => ({ value: type, label: type.charAt(0).toUpperCase() + type.slice(1) }))
+                ]}
+              />
+              <FilterDropdown
+                label="Status"
+                value={filters.status}
+                onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                options={[
+                  { value: '', label: 'All Status' },
+                  { value: 'active', label: 'Active' },
+                  { value: 'inactive', label: 'Inactive' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'error', label: 'Error' }
+                ]}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">View:</span>
+              <Button
+                variant={viewMode === 'grid' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <MdViewModule className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <MdViewList className="w-4 h-4" />
+              </Button>
+            </div>
+            <Button
+              onClick={handleApplyFilters}
+              variant="primary"
+              size="sm"
+              disabled={loading}
+            >
+              {loading ? "Filtering..." : "Apply"}
+            </Button>
+            <Button
+              onClick={handleResetFilters}
+              variant="outline"
+              size="sm"
+              disabled={!filters.type && !filters.module_name && !filters.status}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      </Card>
+      {/* Data Sources Section */}
+      <Card>
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-semibold text-gray-900">Data Sources</h3>
+            <Badge variant="gray" icon={<MdList className="w-3 h-3" />}>
+              {filteredDataSources.length} sources
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            {dataSourcesNeedingSync.length > 0 && (
+              <Button
+                onClick={handleBatchSync}
+                variant="primary"
+                size="sm"
+                icon={<MdSync className="w-4 h-4" />}
+              >
+                Sync All ({dataSourcesNeedingSync.length})
+              </Button>
+            )}
+            <Button
+              onClick={() => navigate("/integration/new-source")}
+              variant="primary"
+              size="sm"
+              icon={<MdAdd className="w-4 h-4" />}
+            >
+              Add Source
+            </Button>
+          </div>
+        </div>
+
+        {filteredDataSources.length === 0 ? (
+          <EmptyState
+            icon={<MdStorage className="w-16 h-16 text-gray-400" />}
+            title="No data sources found"
+            description={
+              searchTerm || filters.module_name || filters.type || filters.status
+                ? "Try adjusting your search or filter criteria"
+                : "Get started by adding your first data source"
+            }
+            action={
+              <Button onClick={() => navigate("/integration/new-source")} variant="primary">
+                <MdAdd className="w-4 h-4 mr-2" />
+                Add Data Source
+              </Button>
+            }
+          />
+        ) : viewMode === 'grid' ? (
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+              {filteredDataSources.map((ds) => (
+                <Card key={ds.id} className="hover:shadow-lg transition-shadow duration-200">
+                  <div className="p-6">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="text-lg font-semibold text-gray-900">{ds.name}</h4>
+                          <Badge 
+                            variant={ds.status === 'active' ? 'green' : ds.status === 'error' ? 'red' : 'gray'}
+                            icon={
+                              ds.status === 'active' ? <MdCheckCircle className="w-3 h-3" /> :
+                              ds.status === 'error' ? <MdError className="w-3 h-3" /> :
+                              <MdWarning className="w-3 h-3" />
+                            }
+                          >
+                            {ds.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">{ds.description || 'No description'}</p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <MdStorage className="text-blue-500" />
+                            {ds.type}
+                          </span>
+                          {ds.module?.module_name && (
+                            <span className="flex items-center gap-1">
+                              <MdViewModule className="text-green-500" />
+                              {ds.module.module_name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-gray-900">
+                          {ds.sync_frequency ? Math.floor(ds.sync_frequency / 3600) : 'N/A'}
+                        </div>
+                        <div className="text-xs text-gray-500">Hours between syncs</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-gray-900">
+                          {ds.last_sync ? new Date(ds.last_sync).toLocaleDateString() : 'Never'}
+                        </div>
+                        <div className="text-xs text-gray-500">Last synced</div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <div className="flex items-center gap-1">
+                        <Tooltip content="Sync now">
+                          <Button
+                            onClick={() => handleSyncDataSource(ds.id)}
+                            variant="outline"
+                            size="sm"
+                            disabled={ds.status !== "active"}
+                          >
+                            <MdSync className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Test connection">
+                          <Button
+                            onClick={() => handleTestConnection(ds.id)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MdCastConnected className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Edit">
+                          <Button
+                            onClick={() => navigate(`/integration/edit-source/${ds.id}`)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MdEdit className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Mapping Rules">
+                          <Button
+                            onClick={() => handleMappingRules(ds.id)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MdRule className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Delete">
+                          <Button
+                            onClick={() => handleDeleteDataSource(ds.id)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MdDelete className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                      </div>
+                      <Button
+                        onClick={() => navigate(`/integration/view/${ds.id}`)}
+                        variant="primary"
+                        size="sm"
+                      >
+                        View Details
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {["Name", "Type", "Status", "Last Synced", "Actions"].map((h) => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {h}
+                  {[
+                    { key: 'name', label: 'Name', sortable: true },
+                    { key: 'type', label: 'Type', sortable: true },
+                    { key: 'status', label: 'Status', sortable: true },
+                    { key: 'last_sync', label: 'Last Synced', sortable: true },
+                    { key: 'actions', label: 'Actions', sortable: false }
+                  ].map((col) => (
+                    <th 
+                      key={col.key} 
+                      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                        col.sortable ? 'cursor-pointer hover:bg-gray-100' : ''
+                      }`}
+                      onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                    >
+                      <div className="flex items-center gap-1">
+                        {col.label}
+                        {col.sortable && (
+                          <div className="flex flex-col">
+                            <MdTrendingUp className={`w-3 h-3 ${
+                              sortBy === col.key && sortOrder === 'asc' ? 'text-blue-600' : 'text-gray-400'
+                            }`} />
+                            <MdTrendingDown className={`w-3 h-3 ${
+                              sortBy === col.key && sortOrder === 'desc' ? 'text-blue-600' : 'text-gray-400'
+                            }`} />
+                          </div>
+                        )}
+                      </div>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {dataSources.map((ds) => (
+                {filteredDataSources.map((ds) => (
                   <tr key={ds.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{ds.name}</div>
@@ -382,57 +847,81 @@ import { MdDelete, MdEdit, MdSync, MdCastConnected, MdQueue, MdList} from "react
                       {getSyncStatusBadge(ds)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                      <Badge variant="blue" icon={<MdStorage className="w-3 h-3" />}>
                         {ds.type}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(ds.status)}`}>
+                      <Badge 
+                        variant={ds.status === 'active' ? 'green' : ds.status === 'error' ? 'red' : 'gray'}
+                        icon={
+                          ds.status === 'active' ? <MdCheckCircle className="w-3 h-3" /> :
+                          ds.status === 'error' ? <MdError className="w-3 h-3" /> :
+                          <MdWarning className="w-3 h-3" />
+                        }
+                      >
                         {ds.status}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {ds.last_sync ? new Date(ds.last_sync).toLocaleString() : "Never"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-lg font-medium space-x-4">
-                      <button
-                        onClick={() => handleSyncDataSource(ds.id)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                        disabled={ds.status !== "active"}
-                        title={ds.status !== "active" ? "Must be active to sync" : "Sync now"}
-                      >
-                        <MdSync />
-                      </button>
-                      <button
-                        onClick={() => handleTestConnection(ds.id)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <MdCastConnected />
-                      </button>
-                      <button
-                        onClick={() => navigate(`/integration/edit-source/${ds.id}`)}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        <MdEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteDataSource(ds.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <MdDelete />
-                      </button>
-                      <button
-                        className="text-blue-600 hover:text-blue-900 text-sm"
-                        onClick={() => setShowMapping((prev) => !prev)}
-                      >
-                        {showMapping ? "Hide Rules" : "Map Rule"}
-                      </button>
-
-                      {showMapping && (
-                        <div className="mt-4">
-                          <MappingRuleList dataSourceId={ds.id} />
-                        </div>
-                      )}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <Tooltip content="Sync now">
+                          <Button
+                            onClick={() => handleSyncDataSource(ds.id)}
+                            variant="outline"
+                            size="sm"
+                            disabled={ds.status !== "active"}
+                          >
+                            <MdSync className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Test connection">
+                          <Button
+                            onClick={() => handleTestConnection(ds.id)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MdCastConnected className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Edit">
+                          <Button
+                            onClick={() => navigate(`/integration/edit-source/${ds.id}`)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MdEdit className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Mapping Rules">
+                          <Button
+                            onClick={() => handleMappingRules(ds.id)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MdRule className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Delete">
+                          <Button
+                            onClick={() => handleDeleteDataSource(ds.id)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MdDelete className="w-4 h-4" />
+                          </Button>
+                        </Tooltip>
+                        <Button
+                          onClick={() => navigate(`/integration/view/${ds.id}`)}
+                          variant="primary"
+                          size="sm"
+                        >
+                          View
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -440,7 +929,19 @@ import { MdDelete, MdEdit, MdSync, MdCastConnected, MdQueue, MdList} from "react
             </table>
           </div>
         )}
-      </div>
+      </Card>
+
+      {/* Mapping Rules Modal */}
+      <Modal
+        isOpen={showMapping}
+        onClose={handleCloseMappingModal}
+        title="Field Mapping Rules"
+        size="large"
+      >
+        {selectedDataSourceId && (
+          <MappingRuleList dataSourceId={selectedDataSourceId} />
+        )}
+      </Modal>
     </div>
   );
 };

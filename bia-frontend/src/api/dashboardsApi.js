@@ -161,3 +161,9 @@ export const getPublicDashboards = async () => {
     throw error.response?.data || error.message;
   }
 };
+export const getDashboardAnalytics = async () => {
+
+};
+export const shareDashboard = async () => {
+
+};

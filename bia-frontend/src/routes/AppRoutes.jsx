@@ -13,6 +13,7 @@ import DashboardEdit from '../modules/dashboards/pages/DashboardEdit';
 import KPIsPage from '../modules/kpis/pages/KPIsPage';
 import CreateNewKPI from '../modules/kpis/pages/CreateKPIPage';
 import KpiViewDetails from '../modules/kpis/pages/KPIViewDetail';
+import EditKPIPage from '../modules/kpis/pages/EditKPIPage';
 
 import WidgetsPage from '../modules/widgets/pages/WidgetsPage';
 import WidgetDetail from '../modules/widgets/pages/WidgetDetail';
@@ -25,7 +26,20 @@ import DataSourceEdit from '../modules/integration/pages/DataSourceEdit';
 import DataSourceDetails from '../modules/integration/pages/DataSourceDetails';
 import DataSync from '../modules/integration/pages/DataSync';
 import ImportExport from '../modules/integration/pages/ImportExport';
-import SyncHistory from '../modules/integration/pages/SyncHistory'
+import SyncHistory from '../modules/integration/pages/SyncHistory';
+
+// Reports and Exports
+import ReportsPage from '../modules/reports/pages/ReportsPage';
+import CreateReportPage from '../modules/reports/pages/CreateReportPage';
+import ReportDetailPage from '../modules/reports/pages/ReportDetailPage';
+import ReportEditPage from '../modules/reports/pages/ReportEditPage';
+import ReportTemplatesPage from '../modules/reports/pages/ReportTemplatesPage';
+
+import ExportsPage from '../modules/export/pages/ExportsPage';
+import CreateExportPage from '../modules/export/pages/CreateExportPage';
+import ExportDetailPage from '../modules/export/pages/ExportDetailPage';
+import ExportHistoryPage from '../modules/export/pages/ExportHistoryPage';
+import ExportTemplatesPage from '../modules/export/pages/ExportTemplatesPage';
 // Mock authentication context - in real app, this would come from AuthContext
 const useAuth = () => ({
   user: { role: ROLES.ADMIN, id: 1 },
@@ -95,6 +109,11 @@ const AppRoutes = () => {
           <Route path={ROUTES.KPI_DETAIL} element={
             <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
               <KpiViewDetails />
+            </ProtectedRoute>
+          } />
+          <Route path={ROUTES.KPI_EDIT} element={
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
+              <EditKPIPage />
             </ProtectedRoute>
           } />
           {/* Widgets - accessible to all authenticated users except viewers */}
@@ -169,7 +188,44 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
           {/* Reports - accessible to all authenticated users */}
-          <Route path={ROUTES.REPORTS} element={<div>Reports Page</div>} />
+          <Route path={ROUTES.REPORTS} element={
+            <ProtectedRoute><ReportsPage /></ProtectedRoute>
+          } />
+          <Route path={ROUTES.REPORTS_NEW} element={
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE, ROLES.OPERATIONS]}>
+              <CreateReportPage />
+            </ProtectedRoute>
+          } />
+          <Route path={ROUTES.REPORTS_DETAIL} element={
+            <ProtectedRoute><ReportDetailPage /></ProtectedRoute>
+          } />
+          <Route path={ROUTES.REPORTS_EDIT} element={
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE, ROLES.OPERATIONS]}>
+              <ReportEditPage />
+            </ProtectedRoute>
+          } />
+          <Route path={ROUTES.REPORTS_TEMPLATES} element={
+            <ProtectedRoute><ReportTemplatesPage /></ProtectedRoute>
+          } />
+
+          {/* Exports - accessible to all authenticated users */}
+          <Route path={ROUTES.EXPORTS} element={
+            <ProtectedRoute><ExportsPage /></ProtectedRoute>
+          } />
+          <Route path={ROUTES.EXPORTS_NEW} element={
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE, ROLES.OPERATIONS]}>
+              <CreateExportPage />
+            </ProtectedRoute>
+          } />
+          <Route path={ROUTES.EXPORTS_DETAIL} element={
+            <ProtectedRoute><ExportDetailPage /></ProtectedRoute>
+          } />
+          <Route path={ROUTES.EXPORTS_HISTORY} element={
+            <ProtectedRoute><ExportHistoryPage /></ProtectedRoute>
+          } />
+          <Route path={ROUTES.EXPORTS_TEMPLATES} element={
+            <ProtectedRoute><ExportTemplatesPage /></ProtectedRoute>
+          } />
           
           {/* Settings - accessible to all authenticated users */}
           <Route path={ROUTES.SETTINGS} element={<div>Settings Page</div>} />

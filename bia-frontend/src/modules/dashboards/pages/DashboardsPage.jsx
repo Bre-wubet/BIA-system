@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   getAllDashboards,
@@ -6,31 +6,82 @@ import {
   createDashboard,
   duplicateDashboard,
   deleteDashboard,
-  setDefaultDashboard
+  setDefaultDashboard,
+  shareDashboard,
+  getDashboardAnalytics
 } from '../../../api/dashboardsApi';
-// import { getAllWidgets } from '../../../api/widgetsApi';
 import { DASHBOARD_TEMPLATES } from '../../../constants/chartConfig';
-import { ROLE_DASHBOARDS, ROLES } from '../../../constants/roles';
+import { ROLE_DASHBOARDS, ROLES, ROLE_PERMISSIONS } from '../../../constants/roles';
 import Card from '../../../components/ui/Card';
 import Button from '../../../components/ui/Button';
 import Modal from '../../../components/ui/Modal';
 import KPIWidget from '../../../components/charts/KPIWidget';
-import { ROLE_PERMISSIONS } from '../../../constants/roles';
+import LineChart from '../../../components/charts/LineChart';
+import BarChart from '../../../components/charts/BarChart';
+import PieChart from '../../../components/charts/PieChart';
+import SearchInput from '../../../components/ui/SearchInput';
+import FilterDropdown from '../../../components/ui/FilterDropdown';
+import ToggleSwitch from '../../../components/ui/ToggleSwitch';
+import Badge from '../../../components/ui/Badge';
+import Tooltip from '../../../components/ui/Tooltip';
+import LoadingSpinner from '../../../components/ui/LoadingSpinner';
+import EmptyState from '../../../components/ui/EmptyState';
 
-import { MdEdit, MdDelete, MdControlPointDuplicate} from 'react-icons/md';
+import { 
+  MdEdit, 
+  MdDelete, 
+  MdControlPointDuplicate, 
+  MdShare, 
+  MdStar, 
+  MdStarBorder,
+  MdRefresh,
+  MdViewModule,
+  MdViewList,
+  MdFilterList,
+  MdSearch,
+  MdAnalytics,
+  MdTrendingUp,
+  MdPublic,
+  MdLock,
+  MdSchedule,
+  MdMoreVert
+} from 'react-icons/md';
 const DashboardsPage = () => {
   const [dashboards, setDashboards] = useState([]);
-  // const [widgets, setWidgets] = useState([]); // Assuming widgets are fetched from an API
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
+  const [analytics, setAnalytics] = useState({});
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedDashboard, setSelectedDashboard] = useState(null);
   const [userRole, setUserRole] = useState(ROLES.ADMIN); // Mock user role
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState('updated_at');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
     fetchDashboards();
     fetchDashboardStats();
+    fetchDashboardAnalytics();
   }, []);
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!refreshing) {
+        fetchDashboards();
+        fetchDashboardStats();
+      }
+    }, 300000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [refreshing]);
 
   const fetchDashboards = async () => {
     try {
@@ -63,6 +114,28 @@ const DashboardsPage = () => {
       setStats(data || {});
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+    }
+  };
+
+  const fetchDashboardAnalytics = async () => {
+    try {
+      const data = await getDashboardAnalytics();
+      setAnalytics(data || {});
+    } catch (error) {
+      console.error('Error fetching dashboard analytics:', error);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchDashboards(),
+        fetchDashboardStats(),
+        fetchDashboardAnalytics()
+      ]);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -118,6 +191,41 @@ const DashboardsPage = () => {
       console.error('Error setting default dashboard:', error);
     }
   };
+
+  // Filter and sort dashboards
+  const filteredAndSortedDashboards = useMemo(() => {
+    let filtered = dashboards.filter(dashboard => {
+      const matchesSearch = dashboard.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           dashboard.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = filterCategory === 'all' || dashboard.category === filterCategory;
+      const matchesStatus = filterStatus === 'all' || 
+                           (filterStatus === 'active' && dashboard.is_active) ||
+                           (filterStatus === 'inactive' && !dashboard.is_active) ||
+                           (filterStatus === 'public' && dashboard.is_public) ||
+                           (filterStatus === 'private' && !dashboard.is_public);
+      
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+
+    // Sort dashboards
+    filtered.sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+      
+      if (sortBy === 'updated_at' || sortBy === 'created_at') {
+        aValue = new Date(aValue);
+        bValue = new Date(bValue);
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [dashboards, searchTerm, filterCategory, filterStatus, sortBy, sortOrder]);
 
   const getAvailableTemplates = () => {
     const roleDashboards = ROLE_DASHBOARDS[userRole] || [];
@@ -175,150 +283,410 @@ const DashboardsPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <LoadingSpinner size="large" message="Loading dashboards..." />;
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-blue-900">Dashboards</h1>
-          <p className="text-gray-600">Create and manage your business dashboards</p>
-        </div>
-        <div className="flex space-x-3">
-          <Button onClick={() => setShowCreateModal(true)} variant="primary">
-            Create Dashboard From Template
-          </Button>
-          <Button onClick={() => navigate(`/dashboards/new`)} variant="primary">
-            New Dashboard
-          </Button>
+      {/* Enhanced Header */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-blue-900 flex items-center gap-3">
+              <MdAnalytics className="text-blue-600" />
+              Dashboards
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Create and manage your business intelligence dashboards
+            </p>
+            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+              <span className="flex items-center gap-1">
+                <MdTrendingUp className="text-green-500" />
+                {analytics.performance_trend || '0%'} performance improvement
+              </span>
+              <span className="flex items-center gap-1">
+                <MdSchedule className="text-blue-500" />
+                Last updated: {new Date().toLocaleTimeString()}
+              </span>
+            </div>
+          </div>
+          <div className="flex space-x-3">
+            <Tooltip content="Refresh all dashboards">
+              <Button 
+                onClick={handleRefresh} 
+                variant="outline" 
+                size="sm"
+                disabled={refreshing}
+              >
+                <MdRefresh className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </Tooltip>
+            <Button onClick={() => setShowCreateModal(true)} variant="primary">
+              <MdViewModule className="w-4 h-4 mr-2" />
+              Create from Template
+            </Button>
+            <Button onClick={() => navigate(`/dashboards/new`)} variant="success">
+              New Dashboard
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Stats Overview */}
+      {/* Enhanced Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPIWidget
           title="Total Dashboards"
           value={dashboards.length || 0}
-          icon={
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          }
+          change={analytics.total_dashboards_change || 0}
+          icon={<MdViewModule className="w-5 h-5 text-blue-600" />}
+          trend="up"
         />
         <KPIWidget
           title="Active Dashboards"
           value={dashboards.filter(dashboard => dashboard.is_active).length || 0}
-          icon={
-            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          change={analytics.active_dashboards_change || 0}
+          icon={<MdTrendingUp className="w-5 h-5 text-green-600" />}
+          trend="up"
         />
         <KPIWidget
           title="Public Dashboards"
           value={dashboards.filter(dashboard => dashboard.is_public).length || 0}
-          icon={
-            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          }
+          change={analytics.public_dashboards_change || 0}
+          icon={<MdPublic className="w-5 h-5 text-purple-600" />}
+          trend="up"
         />
-        {/* <KPIWidget
-          title="Total Widgets"
-          value={widgets.reduce((total, widget) => total + (widget.dashboard?.length || 0), 0) || 0}
-          icon={
-            <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-          }
-        /> */}
+        <KPIWidget
+          title="Total Views"
+          value={analytics.total_views || 0}
+          change={analytics.views_change || 0}
+          icon={<MdAnalytics className="w-5 h-5 text-orange-600" />}
+          trend="up"
+        />
       </div>
 
-      {/* Dashboards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-        {dashboards.map(dashboard => (
-          <Card key={dashboard.id} title={dashboard.name} subtitle={dashboard.description}>
-            <div className="space-y-4">
-              {/* Dashboard Info */}
-              {/* <div className="text-sm text-gray-500 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span>Public:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    dashboard.is_public ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {dashboard.is_public ? 'Yes' : 'No'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Default:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    dashboard.is_default ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {dashboard.is_default ? 'Yes' : 'No'}
-                  </span>
-                </div>
-                <div>Refresh: {dashboard.refresh_interval ? `${dashboard.refresh_interval}s` : 'Manual'}</div>
-              </div> */}
+      {/* Search and Filter Controls */}
+      <Card>
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <div className="flex-1 max-w-md">
+              <SearchInput
+                placeholder="Search dashboards..."
+                value={searchTerm}
+                onChange={setSearchTerm}
+                icon={<MdSearch className="w-4 h-4" />}
+              />
+            </div>
+            <div className="flex gap-2">
+              <FilterDropdown
+                options={[
+                  { value: 'all', label: 'All Categories' },
+                  { value: 'sales', label: 'Sales' },
+                  { value: 'finance', label: 'Finance' },
+                  { value: 'hr', label: 'Human Resources' },
+                  { value: 'operations', label: 'Operations' },
+                  { value: 'analytics', label: 'Analytics' }
+                ]}
+                value={filterCategory}
+                onChange={setFilterCategory}
+                icon={<MdFilterList className="w-4 h-4" />}
+              />
+              <FilterDropdown
+                options={[
+                  { value: 'all', label: 'All Status' },
+                  { value: 'active', label: 'Active' },
+                  { value: 'inactive', label: 'Inactive' },
+                  { value: 'public', label: 'Public' },
+                  { value: 'private', label: 'Private' }
+                ]}
+                value={filterStatus}
+                onChange={setFilterStatus}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">View:</span>
+              <Button
+                variant={viewMode === 'grid' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <MdViewModule className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <MdViewList className="w-4 h-4" />
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <MdFilterList className="w-4 h-4 mr-1" />
+              Filters
+            </Button>
+          </div>
+        </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-center pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-center gap-2">
-                  {/* <Button
-                    onClick={() => handleDuplicateDashboard(dashboard.id)}
-                    variant="outline"
-                    size="sm"
+        {/* Advanced Filters */}
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sort By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="updated_at">Last Updated</option>
+                  <option value="created_at">Created Date</option>
+                  <option value="name">Name</option>
+                  <option value="category">Category</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sort Order
+                </label>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="desc">Descending</option>
+                  <option value="asc">Ascending</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterCategory('all');
+                    setFilterStatus('all');
+                    setSortBy('updated_at');
+                    setSortOrder('desc');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Enhanced Dashboards Display */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+          {filteredAndSortedDashboards.map(dashboard => (
+            <Card key={dashboard.id} className="hover:shadow-lg transition-shadow duration-200">
+              <div className="p-6">
+                {/* Dashboard Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{dashboard.name}</h3>
+                      {dashboard.is_default && (
+                        <Badge variant="gold" icon={<MdStar className="w-3 h-3" />}>
+                          Default
+                        </Badge>
+                      )}
+                      {dashboard.is_public ? (
+                        <Badge variant="green" icon={<MdPublic className="w-3 h-3" />}>
+                          Public
+                        </Badge>
+                      ) : (
+                        <Badge variant="gray" icon={<MdLock className="w-3 h-3" />}>
+                          Private
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{dashboard.description || 'No description'}</p>
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <span>Category: {dashboard.category || 'Uncategorized'}</span>
+                      <span>•</span>
+                      <span>Updated: {new Date(dashboard.updated_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Tooltip content="More options">
+                      <Button variant="ghost" size="sm">
+                        <MdMoreVert className="w-4 h-4" />
+                      </Button>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                {/* Dashboard Preview/Stats */}
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {dashboard.widget_count || 0}
+                      </div>
+                      <div className="text-xs text-gray-600">Widgets</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {dashboard.view_count || 0}
+                      </div>
+                      <div className="text-xs text-gray-600">Views</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-2">
+                    {ROLE_PERMISSIONS[userRole].canEdit && (
+                      <Tooltip content="Edit Dashboard">
+                        <Button
+                          onClick={() => navigate(`/dashboards/${dashboard.id}/edit`)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <MdEdit className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
+                    )}
+                    <Tooltip content="Share Dashboard">
+                      <Button
+                        onClick={() => {
+                          setSelectedDashboard(dashboard);
+                          setShowShareModal(true);
+                        }}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <MdShare className="w-4 h-4" />
+                      </Button>
+                    </Tooltip>
+                    {!dashboard.is_default && (
+                      <Tooltip content="Set as Default">
+                        <Button
+                          onClick={() => handleSetDefault(dashboard.id)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <MdStarBorder className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
+                    )}
+                  </div>
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    onClick={() => navigate(`/dashboards/${dashboard.id}`)}
                   >
-                    <MdControlPointDuplicate className="w-4 h-4 text-gray-500 ml-1" />
-                  </Button> */}
-                  {!dashboard.is_default && (
+                    View
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredAndSortedDashboards.map(dashboard => (
+            <Card key={dashboard.id} className="hover:shadow-md transition-shadow duration-200">
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <MdViewModule className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-semibold text-gray-900">{dashboard.name}</h3>
+                        {dashboard.is_default && (
+                          <Badge variant="gold" icon={<MdStar className="w-3 h-3" />}>
+                            Default
+                          </Badge>
+                        )}
+                        {dashboard.is_public ? (
+                          <Badge variant="green" icon={<MdPublic className="w-3 h-3" />}>
+                            Public
+                          </Badge>
+                        ) : (
+                          <Badge variant="gray" icon={<MdLock className="w-3 h-3" />}>
+                            Private
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{dashboard.description || 'No description'}</p>
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <span>Category: {dashboard.category || 'Uncategorized'}</span>
+                        <span>•</span>
+                        <span>{dashboard.widget_count || 0} widgets</span>
+                        <span>•</span>
+                        <span>{dashboard.view_count || 0} views</span>
+                        <span>•</span>
+                        <span>Updated: {new Date(dashboard.updated_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {ROLE_PERMISSIONS[userRole].canEdit && (
+                      <Button
+                        onClick={() => navigate(`/dashboards/${dashboard.id}/edit`)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <MdEdit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                    )}
                     <Button
-                      onClick={() => handleSetDefault(dashboard.id)}
+                      onClick={() => {
+                        setSelectedDashboard(dashboard);
+                        setShowShareModal(true);
+                      }}
                       variant="outline"
                       size="sm"
                     >
-                      Set Default
+                      <MdShare className="w-4 h-4 mr-1" />
+                      Share
                     </Button>
-                  )}
-                  {ROLE_PERMISSIONS[userRole].canEdit && (
-                    <Button
-                      onClick={() => navigate(`/dashboards/${dashboard.id}/edit`)}
-                      variant="success"
-                      size="sm"
+                    <Button 
+                      variant="primary" 
+                      size="sm" 
+                      onClick={() => navigate(`/dashboards/${dashboard.id}`)}
                     >
-                      <MdEdit className="w-4 h-4 text-white" />
+                      View
                     </Button>
-                  )}
-                  {ROLE_PERMISSIONS[userRole].canDelete && (
-                    <Button
-                      onClick={() => handleDeleteDashboard(dashboard.id)}
-                      variant="danger"
-                      size="sm"
-                    >
-                      <MdDelete className="w-4 h-4 text-white" />
-                    </Button>
-                  )}
-                <Button variant="primary" size="sm" onClick={() => navigate(`/dashboards/${dashboard.id}`)}>
-                  View
-                </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {dashboards.length === 0 && (
-        <Card>
-          <div className="text-center py-8">
-            <p className="text-gray-500">No dashboards found. Create your first dashboard to get started.</p>
-          </div>
-        </Card>
+      {/* Empty State */}
+      {filteredAndSortedDashboards.length === 0 && (
+        <EmptyState
+          icon={<MdViewModule className="w-16 h-16 text-gray-400" />}
+          title="No dashboards found"
+          description={
+            searchTerm || filterCategory !== 'all' || filterStatus !== 'all'
+              ? "Try adjusting your search or filter criteria"
+              : "Create your first dashboard to get started with business intelligence"
+          }
+          action={
+            <Button onClick={() => setShowCreateModal(true)} variant="primary">
+              Create Dashboard
+            </Button>
+          }
+        />
       )}
 
       {/* Create Dashboard Modal */}
@@ -378,6 +746,109 @@ const DashboardsPage = () => {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Share Dashboard Modal */}
+      <Modal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title="Share Dashboard"
+        size="md"
+      >
+        {selectedDashboard && (
+          <div className="space-y-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-2">{selectedDashboard.name}</h4>
+              <p className="text-sm text-gray-600">{selectedDashboard.description}</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Share Type
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="shareType"
+                      value="public"
+                      className="mr-2"
+                      defaultChecked={selectedDashboard.is_public}
+                    />
+                    <span className="text-sm">Public - Anyone with the link can view</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="shareType"
+                      value="private"
+                      className="mr-2"
+                      defaultChecked={!selectedDashboard.is_public}
+                    />
+                    <span className="text-sm">Private - Only invited users can view</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Share Link
+                </label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={`${window.location.origin}/dashboards/${selectedDashboard.id}`}
+                    readOnly
+                    className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/dashboards/${selectedDashboard.id}`)}
+                    className="rounded-l-none"
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Permissions
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input type="checkbox" className="mr-2" defaultChecked />
+                    <span className="text-sm">Allow downloading</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input type="checkbox" className="mr-2" />
+                    <span className="text-sm">Require password</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                onClick={() => setShowShareModal(false)}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary"
+                onClick={() => {
+                  // Handle share logic
+                  setShowShareModal(false);
+                }}
+              >
+                Update Sharing
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
