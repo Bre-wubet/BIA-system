@@ -1,6 +1,8 @@
 import Report from '../models/Report.js';
 import logger from '../config/logger.js';
-import csvExporter from '../utils/exportToCSV.js';
+import csvExporter from '../utils/exporters/exportToCSV.js';
+import pdfExporter from '../utils/exportToPDF.js';
+import excelExporter from '../utils/exportToExcel.js';
 
 export function createReportService() {
   // Internal state
@@ -30,19 +32,22 @@ export function createReportService() {
 
   async function getAllReports({ type, category, limit, offset }) {
     try {
-      let reports;
+      let result;
 
       if (type) {
-        reports = await Report.findByType(type);
+        result = await Report.findByType(type);
       } else if (category) {
-        reports = await Report.findByCategory(category);
+        result = await Report.findByCategory(category);
       } else {
-        reports = await Report.getAllReports();
+        result = await Report.getAllReports();
       }
+
+      // Extract rows from database result
+      const reports = result.rows || [];
 
       // Apply pagination
       if (limit && offset !== undefined) {
-        reports = reports.slice(offset, offset + parseInt(limit));
+        return reports.slice(offset, offset + parseInt(limit));
       }
 
       return reports;
@@ -149,16 +154,24 @@ export function createReportService() {
 
   // ---------------- Formatter ----------------
   async function formatReportOutput(reportData, format, reportName = 'Report') {
+    const options = {
+      title: reportName,
+      author: 'ERP BI Analytics System',
+      subject: `Report: ${reportName}`,
+      generatedAt: new Date().toISOString()
+    };
+
     switch (format.toLowerCase()) {
       case 'csv':
         return csvExporter.convertToCSV(reportData);
       case 'pdf':
-        return await pdfExporter.convertToPDF(reportData, reportName);
+        return await pdfExporter.convertToPDF(reportData, options);
       case 'xlsx':
-        return await excelExporter.convertToExcel(reportData, reportName);
+      case 'excel':
+        return await excelExporter.convertToExcel(reportData, options);
       case 'json':
       default:
-        return reportData;
+        return JSON.stringify(reportData, null, 2);
     }
   }
 
@@ -346,7 +359,8 @@ async function generateGenericReport(config, filters) {
   }
 
   async function getScheduledReports() {
-    return Report.getScheduledReports();
+    const result = await Report.getScheduledReports();
+    return result.rows || [];
   }
 
   async function getReportTypes() {
@@ -355,6 +369,96 @@ async function generateGenericReport(config, filters) {
 
   async function getReportCategories() {
     return Report.getCategories();
+  }
+
+  async function getReportStats() {
+    try {
+      const stats = await Report.getStats();
+      return stats;
+    } catch (error) {
+      logger.error('Error getting report stats:', error);
+      throw error;
+    }
+  }
+
+  async function getReportTemplates({ category, role } = {}) {
+    try {
+      const result = await Report.getTemplates({ category, role });
+      return result.rows || [];
+    } catch (error) {
+      logger.error('Error getting report templates:', error);
+      throw error;
+    }
+  }
+
+  async function createReportFromTemplate(templateId, userId, options = {}) {
+    try {
+      const template = await Report.getTemplate(templateId);
+      if (!template) return null;
+
+      const reportData = {
+        name: options.name || template.name,
+        description: options.description || template.description,
+        type: template.type,
+        category: template.category,
+        query_config: template.query_config,
+        created_by: userId
+      };
+
+      const report = await createReport(reportData);
+      logger.info(`Report created from template: ${templateId} -> ${report.id}`);
+      return report;
+    } catch (error) {
+      logger.error('Error creating report from template:', error);
+      throw error;
+    }
+  }
+
+  async function runReport(id, options = {}) {
+    return executeReport(id, options);
+  }
+
+  async function exportReport(id, format) {
+    try {
+      const report = await getReport(id);
+      if (!report) return null;
+
+      const reportData = await executeReportQuery(report, {});
+      const formattedData = await formatReportOutput(reportData, format, report.name);
+      
+      const filename = `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.${format}`;
+      const contentType = getContentType(format);
+      
+      return {
+        filename,
+        content: formattedData,
+        contentType
+      };
+    } catch (error) {
+      logger.error('Error exporting report:', error);
+      throw error;
+    }
+  }
+
+  async function shareReport(id, shareOptions) {
+    try {
+      const shareData = await Report.updateSharing(id, shareOptions);
+      logger.info(`Report sharing updated: ${id}`);
+      return shareData;
+    } catch (error) {
+      logger.error('Error sharing report:', error);
+      throw error;
+    }
+  }
+
+  function getContentType(format) {
+    const contentTypes = {
+      'pdf': 'application/pdf',
+      'csv': 'text/csv',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'json': 'application/json'
+    };
+    return contentTypes[format] || 'application/octet-stream';
   }
 
   // ---------------- Multiple / Batch ----------------
@@ -427,6 +531,12 @@ async function generateGenericReport(config, filters) {
     getScheduledReports,
     getReportTypes,
     getReportCategories,
+    getReportStats,
+    getReportTemplates,
+    createReportFromTemplate,
+    runReport,
+    exportReport,
+    shareReport,
     generateMultipleReports,
     scheduleMultipleReports,
     logReportExecution,

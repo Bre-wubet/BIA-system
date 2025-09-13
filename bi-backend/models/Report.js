@@ -209,6 +209,74 @@ async function updateRecipients(id, recipients) {
   return result[0];
 }
 
+async function getStats() {
+  const query = `
+    SELECT 
+      COUNT(*) as total_reports,
+      COUNT(CASE WHEN schedule IS NOT NULL THEN 1 END) as scheduled_reports,
+      COUNT(CASE WHEN last_generated_at > NOW() - INTERVAL '7 days' THEN 1 END) as recent_reports,
+      COUNT(CASE WHEN created_at > NOW() - INTERVAL '30 days' THEN 1 END) as new_reports
+    FROM ${tableName} 
+    WHERE is_active = true
+  `;
+  const result = await database.query(query);
+  return result[0];
+}
+
+async function getTemplates({ category, role } = {}) {
+  let query = `
+    SELECT * FROM ${tableName} 
+    WHERE is_active = true 
+    AND is_template = true
+  `;
+  const values = [];
+  let paramIndex = 1;
+
+  if (category) {
+    query += ` AND category = $${paramIndex++}`;
+    values.push(category);
+  }
+
+  if (role) {
+    query += ` AND (allowed_roles IS NULL OR allowed_roles @> $${paramIndex++})`;
+    values.push(JSON.stringify([role]));
+  }
+
+  query += ` ORDER BY name`;
+  return await database.query(query, values);
+}
+
+async function getTemplate(id) {
+  const query = `SELECT * FROM ${tableName} WHERE id = $1 AND is_active = true AND is_template = true`;
+  const result = await database.query(query, [id]);
+  return result[0] || null;
+}
+
+async function updateSharing(id, shareOptions) {
+  const { isPublic, allowDownload, expiresAt, password } = shareOptions;
+  
+  const query = `
+    UPDATE ${tableName} 
+    SET is_public = $1,
+        allow_download = $2,
+        expires_at = $3,
+        share_password = $4,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = $5
+    RETURNING *
+  `;
+  
+  const result = await database.query(query, [
+    isPublic || false,
+    allowDownload || false,
+    expiresAt || null,
+    password || null,
+    id
+  ]);
+  
+  return result[0];
+}
+
 export default {
   createReportTable,
   createReport,
@@ -224,5 +292,9 @@ export default {
   duplicate,
   updateLastGeneratedAt,
   updateSchedule,
-  updateRecipients
+  updateRecipients,
+  getStats,
+  getTemplates,
+  getTemplate,
+  updateSharing
 }

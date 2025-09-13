@@ -1,10 +1,10 @@
 // controllers/exportController.js
 import exportService from '../services/exportService.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
+import { asyncHandler } from '../middlewares/errorHandler.js';
 import logger from '../config/logger.js';
 
 // Export data with filters
-const exportData = asyncHandler(async (req, res) => {
+export const exportData = asyncHandler(async (req, res) => {
   const { dataType, filters = {}, format = 'csv', includeHeaders = true } = req.body;
 
   const exportResult = await exportService.exportData(dataType, filters, format, includeHeaders);
@@ -16,7 +16,7 @@ const exportData = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`Data exported: ${dataType} in ${format} format by user ${req.user.id}`);
+  logger.info(`Data exported: ${dataType} in ${format} format by user ${req.users?.id || 1}`);
 
   res.json({
     success: true,
@@ -26,7 +26,7 @@ const exportData = asyncHandler(async (req, res) => {
 });
 
 // Export dashboard data
-const exportDashboard = asyncHandler(async (req, res) => {
+export const exportDashboard = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { format = 'csv', includeWidgets = true, includeData = true } = req.query;
 
@@ -39,7 +39,7 @@ const exportDashboard = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`Dashboard exported: ${id} in ${format} format by user ${req.user.id}`);
+  logger.info(`Dashboard exported: ${id} in ${format} format by user ${req.users?.id || 1}`);
 
   res.json({
     success: true,
@@ -49,7 +49,7 @@ const exportDashboard = asyncHandler(async (req, res) => {
 });
 
 // Export report data
-const exportReport = asyncHandler(async (req, res) => {
+export const exportReport = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { format = 'csv', includeMetadata = true, includeData = true } = req.query;
 
@@ -62,7 +62,7 @@ const exportReport = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`Report exported: ${id} in ${format} format by user ${req.user.id}`);
+  logger.info(`Report exported: ${id} in ${format} format by user ${req.users?.id || 1}`);
 
   res.json({
     success: true,
@@ -72,7 +72,7 @@ const exportReport = asyncHandler(async (req, res) => {
 });
 
 // Export analytics data
-const exportAnalytics = asyncHandler(async (req, res) => {
+export const exportAnalytics = asyncHandler(async (req, res) => {
   const { type } = req.params;
   const { format = 'csv', timeRange = '30d', filters = {} } = req.query;
 
@@ -85,7 +85,7 @@ const exportAnalytics = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`Analytics exported: ${type} in ${format} format by user ${req.user.id}`);
+  logger.info(`Analytics exported: ${type} in ${format} format by user ${req.users?.id || 1}`);
 
   res.json({
     success: true,
@@ -95,7 +95,7 @@ const exportAnalytics = asyncHandler(async (req, res) => {
 });
 
 // Export KPI data
-const exportKPI = asyncHandler(async (req, res) => {
+export const exportKPI = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { format = 'csv', includeHistory = false, timeRange = '30d' } = req.query;
 
@@ -108,7 +108,7 @@ const exportKPI = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`KPI exported: ${id} in ${format} format by user ${req.user.id}`);
+  logger.info(`KPI exported: ${id} in ${format} format by user ${req.users?.id || 1}`);
 
   res.json({
     success: true,
@@ -118,10 +118,10 @@ const exportKPI = asyncHandler(async (req, res) => {
 });
 
 // Batch export multiple items
-const batchExport = asyncHandler(async (req, res) => {
+export const batchExport = asyncHandler(async (req, res) => {
   const { exports } = req.body; // Array of export requests
 
-  const jobId = await exportService.batchExport(exports, req.user.id);
+  const jobId = await exportService.batchExport(exports, req.users?.id || 1);
 
   if (!jobId) {
     return res.status(400).json({
@@ -130,7 +130,7 @@ const batchExport = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`Batch export started: ${jobId} with ${exports.length} items by user ${req.user.id}`);
+  logger.info(`Batch export started: ${jobId} with ${exports.length} items by user ${req.users?.id || 1}`);
 
   res.json({
     success: true,
@@ -140,7 +140,7 @@ const batchExport = asyncHandler(async (req, res) => {
 });
 
 // Get batch export status
-const getBatchExportStatus = asyncHandler(async (req, res) => {
+export const getBatchExportStatus = asyncHandler(async (req, res) => {
   const { jobId } = req.params;
 
   const status = await exportService.getBatchExportStatus(jobId);
@@ -159,7 +159,7 @@ const getBatchExportStatus = asyncHandler(async (req, res) => {
 });
 
 // Get export templates
-const getExportTemplates = asyncHandler(async (req, res) => {
+export const getExportTemplates = asyncHandler(async (req, res) => {
   const { type } = req.query;
 
   const templates = await exportService.getExportTemplates(type);
@@ -171,19 +171,19 @@ const getExportTemplates = asyncHandler(async (req, res) => {
 });
 
 // Create export template
-const createExportTemplate = asyncHandler(async (req, res) => {
+export const createExportTemplate = asyncHandler(async (req, res) => {
   const { name, type, config, created_by } = req.body;
 
   const templateData = {
     name,
     type,
     config,
-    created_by: created_by || req.user.id
+    created_by: created_by || req.users?.id || 1
   };
 
   const template = await exportService.createExportTemplate(templateData);
 
-  logger.info(`Export template created: ${template.id} by user ${req.user.id}`);
+  logger.info(`Export template created: ${template.id} by user ${req.users?.id || 1}`);
 
   res.status(201).json({
     success: true,
@@ -193,7 +193,7 @@ const createExportTemplate = asyncHandler(async (req, res) => {
 });
 
 // Update export template
-const updateExportTemplate = asyncHandler(async (req, res) => {
+export const updateExportTemplate = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
 
@@ -206,7 +206,7 @@ const updateExportTemplate = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`Export template updated: ${id} by user ${req.user.id}`);
+  logger.info(`Export template updated: ${id} by user ${req.users?.id || 1}`);
 
   res.json({
     success: true,
@@ -216,7 +216,7 @@ const updateExportTemplate = asyncHandler(async (req, res) => {
 });
 
 // Delete export template
-const deleteExportTemplate = asyncHandler(async (req, res) => {
+export const deleteExportTemplate = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const deleted = await exportService.deleteExportTemplate(id);
@@ -228,7 +228,7 @@ const deleteExportTemplate = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`Export template deleted: ${id} by user ${req.user.id}`);
+  logger.info(`Export template deleted: ${id} by user ${req.users?.id || 1}`);
 
   res.json({
     success: true,
@@ -237,7 +237,7 @@ const deleteExportTemplate = asyncHandler(async (req, res) => {
 });
 
 // Get export history
-const getExportHistory = asyncHandler(async (req, res) => {
+export const getExportHistory = asyncHandler(async (req, res) => {
   const { type, format, limit = 50, offset = 0 } = req.query;
 
   const history = await exportService.getExportHistory({ type, format, limit, offset });
@@ -249,7 +249,7 @@ const getExportHistory = asyncHandler(async (req, res) => {
 });
 
 // Get specific export history item
-const getExportHistoryItem = asyncHandler(async (req, res) => {
+export const getExportHistoryItem = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const historyItem = await exportService.getExportHistoryItem(id);
@@ -267,31 +267,92 @@ const getExportHistoryItem = asyncHandler(async (req, res) => {
   });
 });
 
-// Download exported file
-const downloadExport = asyncHandler(async (req, res) => {
+// Get export jobs
+export const getExportJobs = asyncHandler(async (req, res) => {
+  const { status, limit = 50, offset = 0 } = req.query;
+
+  const jobs = await exportService.getExportJobs({ status, limit, offset });
+
+  res.json({
+    success: true,
+    data: jobs
+  });
+});
+
+// Get specific export job
+export const getExportJob = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const fileData = await exportService.downloadExport(id);
+  const job = await exportService.getExportJob(id);
 
-  if (!fileData) {
+  if (!job) {
     return res.status(404).json({
       success: false,
-      message: 'Export file not found'
+      message: 'Export job not found'
     });
   }
 
-  const { filename, content, contentType } = fileData;
+  res.json({
+    success: true,
+    data: job
+  });
+});
 
-  res.setHeader('Content-Type', contentType);
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+// Cancel export job
+export const cancelExportJob = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-  logger.info(`Export file downloaded: ${id} by user ${req.user.id}`);
+  const cancelled = await exportService.cancelExportJob(id);
 
-  res.send(content);
+  if (!cancelled) {
+    return res.status(404).json({
+      success: false,
+      message: 'Export job not found or cannot be cancelled'
+    });
+  }
+
+  logger.info(`Export job cancelled: ${id} by user ${req.users?.id || 1}`);
+
+  res.json({
+    success: true,
+    message: 'Export job cancelled successfully'
+  });
+});
+
+// Download exported file
+export const downloadExport = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const fileData = await exportService.downloadExport(id);
+
+    if (!fileData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Export file not found'
+      });
+    }
+
+    const { filename, content, contentType, fileSize } = fileData;
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', fileSize);
+
+    logger.info(`Export file downloaded: ${id} by user ${req.users?.id || 1}`);
+
+    res.send(content);
+  } catch (error) {
+    logger.error(`Error downloading export ${id}:`, error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
 });
 
 // Get export statistics
-const getExportStatistics = asyncHandler(async (req, res) => {
+export const getExportStatistics = asyncHandler(async (req, res) => {
   const { timeRange = '30d' } = req.query;
 
   const statistics = await exportService.getExportStatistics(timeRange);
@@ -303,7 +364,7 @@ const getExportStatistics = asyncHandler(async (req, res) => {
 });
 
 // Validate export request
-const validateExportRequest = asyncHandler(async (req, res) => {
+export const validateExportRequest = asyncHandler(async (req, res) => {
   const { dataType, filters, format } = req.body;
 
   const validation = await exportService.validateExportRequest(dataType, filters, format);
@@ -314,21 +375,3 @@ const validateExportRequest = asyncHandler(async (req, res) => {
   });
 });
 
-export default {
-  exportData,
-  exportDashboard,
-  exportReport,
-  exportAnalytics,
-  exportKPI,
-  batchExport,
-  getBatchExportStatus,
-  getExportTemplates,
-  createExportTemplate,
-  updateExportTemplate,
-  deleteExportTemplate,
-  getExportHistory,
-  getExportHistoryItem,
-  downloadExport,
-  getExportStatistics,
-  validateExportRequest
-};

@@ -18,8 +18,8 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import dataSourceRoutes from './routes/dataSourceRoutes.js';
 import kpiRoutes from './routes/kpiRoutes.js';
 import widgetRoutes from './routes/widgetRoutes.js';
-// import reportRoutes from './routes/reportRoutes.js';
-// import exportRoutes from './routes/exportRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import exportRoutes from './routes/exportRoutes.js';
 // import predictiveRoutes from './routes/predictiveRoutes.js';
 
 let server;
@@ -117,8 +117,8 @@ async function createServer() {
   app.use('/api/data-source', dataSourceRoutes);
   app.use('/api/kpis', kpiRoutes);
   app.use('/api/widgets', widgetRoutes);
-//   app.use('/api/reports', reportRoutes);
-//   app.use('/api/export', exportRoutes);
+  app.use('/api/reports', reportRoutes);
+  app.use('/api/export', exportRoutes);
 //   app.use('/api/predictive', predictiveRoutes);
 
   // Public Routes

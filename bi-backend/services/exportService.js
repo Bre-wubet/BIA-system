@@ -1,12 +1,15 @@
-import csvExporter from '../utils/exportToCSV.js';
+import csvExporter from '../utils/exporters/exportToCSV.js';
+import pdfExporter from '../utils/exportToPDF.js';
+import excelExporter from '../utils/exportToExcel.js';
 import logger from '../config/logger.js';
 import Dashboard from '../models/Dashboard.js';
 import Report from '../models/Report.js';
 import KPI from '../models/KPI.js';
+import Export from '../models/Export.js';
 
 // Centralized constants
 const DATA_TYPES = ['dashboard', 'report', 'kpi', 'analytics'];
-const FORMATS = ['csv', 'json'];
+const FORMATS = ['csv', 'pdf', 'xlsx', 'excel', 'json'];
 
 export function createExportService() {
   // internal state (like class fields)
@@ -17,12 +20,15 @@ export function createExportService() {
   // format handlers
   const formatHandlers = {
     csv: (data, options = {}) => csvExporter.convertToCSV(data, options),
+    pdf: async (data, options = {}) => await pdfExporter.convertToPDF(data, options),
+    xlsx: async (data, options = {}) => await excelExporter.convertToExcel(data, options),
+    excel: async (data, options = {}) => await excelExporter.convertToExcel(data, options),
     json: (data) => JSON.stringify(data, null, 2),
   };
 
   // ---- Core methods ----
 
-  async function exportData(dataType, filters = {}, format = 'csv', includeHeaders = true) {
+  async function exportData(dataType, filters = {}, format = 'csv', includeHeaders = true, userId = null) {
     if (!DATA_TYPES.includes(dataType)) {
       throw new Error(`Unsupported data type: ${dataType}`);
     }
@@ -31,11 +37,48 @@ export function createExportService() {
     }
 
     try {
+      // Create export record
+      const jobId = generateJobId();
+      const exportRecord = await Export.createExport({
+        jobId,
+        userId,
+        dataType,
+        format,
+        status: 'processing',
+        filters,
+        options: { includeHeaders }
+      });
+
+      // Update status to processing
+      await Export.updateStatus(jobId, 'processing');
+
       const data = await getDataByType(dataType, filters);
-      return formatHandlers[format](data, { includeHeaders });
+      const formattedData = await formatHandlers[format](data, { includeHeaders });
+      
+      // Generate filename
+      const filename = `${dataType}_export_${Date.now()}.${format}`;
+      const filePath = await saveExportFile(formattedData, filename, format);
+
+      // Update export record with completion
+      await Export.updateStatus(jobId, 'completed', {
+        filename,
+        filePath,
+        fileSize: Buffer.byteLength(formattedData)
+      });
+
+      logger.info(`Export completed: ${jobId} - ${filename}`);
+      return { jobId, filename, filePath, data: formattedData };
     } catch (error) {
       logger.error(`Error exporting data [${dataType}]:`, error);
-      throw new Error(`Export failed for ${dataType}`);
+      
+      // Update export record with error
+      if (jobId) {
+        await Export.updateStatus(jobId, 'failed', {
+          errorMessage: error.message
+        });
+      }
+      
+      throw new Error(`Export failed for ${dataType}: ${error.message}`);
     }
   }
 
@@ -170,6 +213,194 @@ export function createExportService() {
     return { widgets: [{ id: 1, type: 'chart', data: [10, 20, 30] }] };
   }
 
+  // ---- Utility Functions ----
+  function generateJobId() {
+    return `export_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  async function saveExportFile(data, filename, format) {
+    const path = require('path');
+    const fs = require('fs');
+    
+    const exportsDir = path.join(process.cwd(), 'exports');
+    if (!fs.existsSync(exportsDir)) {
+      fs.mkdirSync(exportsDir, { recursive: true });
+    }
+    
+    const filePath = path.join(exportsDir, filename);
+    fs.writeFileSync(filePath, data);
+    return filePath;
+  }
+
+  // ---- Export Job Management ----
+  async function getExportJobs({ status, limit = 50, offset = 0, userId } = {}) {
+    try {
+      const exports = await Export.getAllExports({ status, limit, offset, userId });
+      return exports;
+    } catch (error) {
+      logger.error('Error getting export jobs:', error);
+      throw error;
+    }
+  }
+
+  async function getExportJob(jobId) {
+    try {
+      const exportRecord = await Export.findByJobId(jobId);
+      return exportRecord;
+    } catch (error) {
+      logger.error('Error getting export job:', error);
+      throw error;
+    }
+  }
+
+  async function cancelExportJob(jobId) {
+    try {
+      const exportRecord = await Export.findByJobId(jobId);
+      if (!exportRecord || exportRecord.status === 'completed' || exportRecord.status === 'failed') {
+        return false;
+      }
+      
+      await Export.updateStatus(jobId, 'cancelled');
+      logger.info(`Export job cancelled: ${jobId}`);
+      return true;
+    } catch (error) {
+      logger.error('Error cancelling export job:', error);
+      throw error;
+    }
+  }
+
+  // ---- Export History ----
+  async function getExportHistory({ type, format, limit = 50, offset = 0, userId } = {}) {
+    try {
+      const exports = await Export.getAllExports({ 
+        dataType: type, 
+        format, 
+        limit, 
+        offset, 
+        userId 
+      });
+      return exports;
+    } catch (error) {
+      logger.error('Error getting export history:', error);
+      throw error;
+    }
+  }
+
+  async function getExportHistoryItem(id) {
+    try {
+      const exportRecord = await Export.findById(id);
+      return exportRecord;
+    } catch (error) {
+      logger.error('Error getting export history item:', error);
+      throw error;
+    }
+  }
+
+  // ---- Export Statistics ----
+  async function getExportStatistics(timeRange = '30d', userId = null) {
+    try {
+      const stats = await Export.getExportStats({ userId, timeRange });
+      const exportsByType = await Export.getExportsByType({ timeRange });
+      
+      return {
+        ...stats,
+        averageProcessingTime: stats.avg_processing_time_seconds 
+          ? `${Math.round(stats.avg_processing_time_seconds / 60 * 100) / 100} minutes`
+          : 'N/A',
+        exportsByType: exportsByType.reduce((acc, item) => {
+          acc[item.data_type] = (acc[item.data_type] || 0) + parseInt(item.count);
+          return acc;
+        }, {})
+      };
+    } catch (error) {
+      logger.error('Error getting export statistics:', error);
+      throw error;
+    }
+  }
+
+  // ---- Download Functionality ----
+  async function downloadExport(exportId) {
+    try {
+      const exportRecord = await Export.findById(exportId);
+      if (!exportRecord) {
+        return null;
+      }
+
+      if (exportRecord.status !== 'completed') {
+        throw new Error('Export not completed yet');
+      }
+
+      if (!exportRecord.file_path) {
+        throw new Error('Export file not found');
+      }
+
+      const fs = require('fs');
+      const path = require('path');
+      
+      if (!fs.existsSync(exportRecord.file_path)) {
+        throw new Error('Export file no longer exists');
+      }
+
+      const fileContent = fs.readFileSync(exportRecord.file_path);
+      const contentType = getContentType(exportRecord.format);
+
+      return {
+        filename: exportRecord.filename,
+        content: fileContent,
+        contentType,
+        fileSize: exportRecord.file_size
+      };
+    } catch (error) {
+      logger.error('Error downloading export:', error);
+      throw error;
+    }
+  }
+
+  function getContentType(format) {
+    const contentTypes = {
+      'pdf': 'application/pdf',
+      'csv': 'text/csv',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'excel': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'json': 'application/json'
+    };
+    return contentTypes[format] || 'application/octet-stream';
+  }
+
+  // ---- Export Validation ----
+  async function validateExportRequest(dataType, filters, format) {
+    try {
+      const validation = {
+        isValid: true,
+        errors: [],
+        warnings: []
+      };
+
+      // Validate data type
+      if (!DATA_TYPES.includes(dataType)) {
+        validation.isValid = false;
+        validation.errors.push(`Invalid data type: ${dataType}`);
+      }
+
+      // Validate format
+      if (!FORMATS.includes(format)) {
+        validation.isValid = false;
+        validation.errors.push(`Invalid format: ${format}`);
+      }
+
+      // Validate filters
+      if (filters && typeof filters !== 'object') {
+        validation.isValid = false;
+        validation.errors.push('Filters must be an object');
+      }
+
+      return validation;
+    } catch (error) {
+      logger.error('Error validating export request:', error);
+      throw error;
+    }
+  }
+
   // ---- Public API ----
   return {
     exportData,
@@ -180,6 +411,14 @@ export function createExportService() {
     getReportData,
     getKPIData,
     getAnalyticsData,
+    getExportJobs,
+    getExportJob,
+    cancelExportJob,
+    getExportHistory,
+    getExportHistoryItem,
+    getExportStatistics,
+    downloadExport,
+    validateExportRequest
   };
 }
 
