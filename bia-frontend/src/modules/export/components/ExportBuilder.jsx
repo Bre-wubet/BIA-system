@@ -244,7 +244,7 @@ const ExportBuilder = ({ exportData, onExportDataChange }) => {
     }
   };
 
-  const filters = Object.values(exportData.filters || {});
+  const filters = Object.values(exportData.filters || {}).filter(filter => filter && filter.id);
 
   return (
     <div className="space-y-6">
@@ -252,11 +252,11 @@ const ExportBuilder = ({ exportData, onExportDataChange }) => {
       <div>
         <h3 className="text-lg font-medium mb-4">Add Filters & Sorting</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-          {filterTypes.map(filterType => {
+          {filterTypes.map((filterType, index) => {
             const Icon = filterType.icon;
             return (
               <Button
-                key={filterType.type}
+                key={filterType.type || `filter-type-${index}`}
                 onClick={() => addFilter(filterType.type)}
                 variant="outline"
                 size="sm"
@@ -275,10 +275,10 @@ const ExportBuilder = ({ exportData, onExportDataChange }) => {
         <div className="space-y-4">
           <h4 className="font-medium text-gray-900">Active Filters</h4>
           <div className="space-y-3">
-            {filters.map(filter => {
+            {filters.map((filter, index) => {
               const FilterIcon = filterTypes.find(ft => ft.type === filter.type)?.icon || MdFilterList;
               return (
-                <Card key={filter.id} className="p-4">
+                <Card key={filter.id || `filter-${index}`} className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <FilterIcon className="w-4 h-4 text-gray-500" />

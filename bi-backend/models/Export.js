@@ -67,7 +67,7 @@ async function createExport(exportData) {
   ];
 
   const result = await database.query(query, values);
-  return result[0];
+  return result.rows[0];
 }
 
 async function findById(id) {
@@ -115,7 +115,13 @@ async function getAllExports({ userId, status, dataType, format, limit = 50, off
   query += ` ORDER BY e.created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
   values.push(parseInt(limit), parseInt(offset));
 
-  return await database.query(query, values);
+  console.log('Export query:', query);
+  console.log('Export query values:', values);
+  
+  const result = await database.query(query, values);
+  console.log('Export query result:', result);
+  
+  return result;
 }
 
 async function updateExport(id, updateData) {

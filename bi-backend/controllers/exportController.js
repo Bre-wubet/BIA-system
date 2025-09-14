@@ -5,6 +5,14 @@ import logger from '../config/logger.js';
 
 // Export data with filters
 export const exportData = asyncHandler(async (req, res) => {
+  // Debug logging
+  logger.info('Export data request received:', {
+    body: req.body,
+    headers: req.headers,
+    method: req.method,
+    url: req.url
+  });
+
   const { dataType, filters = {}, format = 'csv', includeHeaders = true } = req.body;
 
   const exportResult = await exportService.exportData(dataType, filters, format, includeHeaders);
@@ -16,7 +24,7 @@ export const exportData = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`Data exported: ${dataType} in ${format} format by user ${req.users?.id || 1}`);
+  logger.info(`Data exported: ${dataType} in ${format} format by user ${req.user?.id || 1}`);
 
   res.json({
     success: true,

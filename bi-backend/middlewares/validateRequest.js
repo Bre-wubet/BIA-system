@@ -7,6 +7,14 @@ export const validateRequest = (schema) => {
   return (req, res, next) => {
     const errors = [];
 
+    // Debug logging
+    logger.info('Validation request:', {
+      body: req.body,
+      schema: schema,
+      url: req.url,
+      method: req.method
+    });
+
     // Validate each schema field
     for (const [field, rules] of Object.entries(schema)) {
       const value = req.body[field];

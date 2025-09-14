@@ -6,6 +6,8 @@ import Dashboard from '../models/Dashboard.js';
 import Report from '../models/Report.js';
 import KPI from '../models/KPI.js';
 import Export from '../models/Export.js';
+import path from 'path';
+import fs from 'fs';
 
 // Centralized constants
 const DATA_TYPES = ['dashboard', 'report', 'kpi', 'analytics'];
@@ -36,9 +38,10 @@ export function createExportService() {
       throw new Error(`Unsupported format: ${format}`);
     }
 
+    let jobId = null;
     try {
       // Create export record
-      const jobId = generateJobId();
+      jobId = generateJobId();
       const exportRecord = await Export.createExport({
         jobId,
         userId,
@@ -214,14 +217,8 @@ export function createExportService() {
   }
 
   // ---- Utility Functions ----
-  function generateJobId() {
-    return `export_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
 
   async function saveExportFile(data, filename, format) {
-    const path = require('path');
-    const fs = require('fs');
-    
     const exportsDir = path.join(process.cwd(), 'exports');
     if (!fs.existsSync(exportsDir)) {
       fs.mkdirSync(exportsDir, { recursive: true });
@@ -235,7 +232,9 @@ export function createExportService() {
   // ---- Export Job Management ----
   async function getExportJobs({ status, limit = 50, offset = 0, userId } = {}) {
     try {
+      logger.info('Getting export jobs:', { status, limit, offset, userId });
       const exports = await Export.getAllExports({ status, limit, offset, userId });
+      logger.info('Export jobs result:', { count: exports?.length, exports });
       return exports;
     } catch (error) {
       logger.error('Error getting export jobs:', error);
@@ -299,15 +298,37 @@ export function createExportService() {
   // ---- Export Statistics ----
   async function getExportStatistics(timeRange = '30d', userId = null) {
     try {
+      logger.info('Getting export statistics:', { timeRange, userId });
       const stats = await Export.getExportStats({ userId, timeRange });
       const exportsByType = await Export.getExportsByType({ timeRange });
+      
+      logger.info('Export stats result:', { stats, exportsByType });
+      
+      // Handle case where stats is undefined or null
+      if (!stats) {
+        logger.warn('Export stats returned undefined, using default values');
+        return {
+          total_exports: 0,
+          completed_exports: 0,
+          failed_exports: 0,
+          processing_exports: 0,
+          pending_exports: 0,
+          averageProcessingTime: 'N/A',
+          total_file_size: 0,
+          pdf_exports: 0,
+          csv_exports: 0,
+          excel_exports: 0,
+          json_exports: 0,
+          exportsByType: {}
+        };
+      }
       
       return {
         ...stats,
         averageProcessingTime: stats.avg_processing_time_seconds 
           ? `${Math.round(stats.avg_processing_time_seconds / 60 * 100) / 100} minutes`
           : 'N/A',
-        exportsByType: exportsByType.reduce((acc, item) => {
+        exportsByType: (exportsByType || []).reduce((acc, item) => {
           acc[item.data_type] = (acc[item.data_type] || 0) + parseInt(item.count);
           return acc;
         }, {})
@@ -367,6 +388,61 @@ export function createExportService() {
     return contentTypes[format] || 'application/octet-stream';
   }
 
+  // ---- Export Templates ----
+  async function getExportTemplates(type = null) {
+    try {
+      // Mock templates for now - in a real app, these would come from a database
+      const templates = [
+        {
+          id: 1,
+          name: 'Sales Report Export',
+          description: 'Export sales data with filters',
+          data_type: 'report',
+          format: 'csv',
+          filters: { date_range: 'last_30_days', status: 'completed' },
+          options: { include_headers: true, delimiter: ',' }
+        },
+        {
+          id: 2,
+          name: 'Dashboard Export',
+          description: 'Export dashboard data as PDF',
+          data_type: 'dashboard',
+          format: 'pdf',
+          filters: {},
+          options: { include_charts: true, page_size: 'A4' }
+        },
+        {
+          id: 3,
+          name: 'KPI Summary',
+          description: 'Export KPI data as Excel',
+          data_type: 'kpi',
+          format: 'excel',
+          filters: { period: 'monthly' },
+          options: { include_trends: true, format_numbers: true }
+        },
+        {
+          id: 4,
+          name: 'Analytics Data',
+          description: 'Export analytics data as JSON',
+          data_type: 'analytics',
+          format: 'json',
+          filters: { category: 'user_behavior' },
+          options: { pretty_print: true }
+        }
+      ];
+
+      // Filter by type if specified
+      if (type) {
+        return templates.filter(template => template.data_type === type);
+      }
+
+      return templates;
+    } catch (error) {
+      logger.error('Error getting export templates:', error);
+      throw error;
+    }
+  }
+
   // ---- Export Validation ----
   async function validateExportRequest(dataType, filters, format) {
     try {
@@ -418,7 +494,8 @@ export function createExportService() {
     getExportHistoryItem,
     getExportStatistics,
     downloadExport,
-    validateExportRequest
+    validateExportRequest,
+    getExportTemplates
   };
 }
 

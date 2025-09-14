@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import Dashboard from '../models/Dashboard.js';
 // import DashboardWidget from '../models/DashboardWidget.js'
 import Report from '../models/Report.js';
+import Export from '../models/Export.js';
 import PredictiveModel from '../models/PredictiveModel.js';
 import Prediction from '../models/Prediction.js';
 import DataSource from '../models/DataSource.js';
@@ -68,6 +69,7 @@ const migrate = async () => {
 
     logger.info('Creating reporting tables...');
     await Report.createReportTable();
+    await Export.createExportTable();
     logger.info('Report table created');
 
     logger.info('Creating predictive analytics tables...');

@@ -52,9 +52,14 @@ const ExportsPage = () => {
     try {
       setLoading(true);
       const res = await getExportJobs();
-      setExports(res.data || []);
+      console.log('Export jobs response:', res);
+      // Ensure exports is always an array
+      const exportsArray = Array.isArray(res) ? res : (res.data || []);
+      console.log('Processed exports array:', exportsArray);
+      setExports(exportsArray);
     } catch (error) {
       console.error('Error fetching exports:', error);
+      setExports([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -111,7 +116,7 @@ const ExportsPage = () => {
     }
   };
 
-  const filteredExports = exports.filter(exportItem => {
+  const filteredExports = (Array.isArray(exports) ? exports : []).filter(exportItem => {
     if (filters.format && exportItem.format !== filters.format) return false;
     if (filters.status && exportItem.status !== filters.status) return false;
     if (filters.source && exportItem.source !== filters.source) return false;
@@ -119,17 +124,18 @@ const ExportsPage = () => {
   });
 
   const getRoleBasedExports = () => {
+    const exportsArray = Array.isArray(exports) ? exports : [];
     const roleExports = {
-      [ROLES.ADMIN]: exports,
-      [ROLES.MANAGER]: exports.filter(e => ['dashboard', 'report', 'data'].includes(e.type)),
-      [ROLES.ANALYST]: exports.filter(e => ['data', 'analysis', 'custom'].includes(e.type)),
-      [ROLES.VIEWER]: exports.filter(e => e.is_public || e.role === userRole),
-      [ROLES.SALES]: exports.filter(e => ['sales', 'customer', 'marketing'].includes(e.category)),
-      [ROLES.HR]: exports.filter(e => ['hr', 'employee', 'performance'].includes(e.category)),
-      [ROLES.FINANCE]: exports.filter(e => ['finance', 'budget', 'revenue'].includes(e.category)),
-      [ROLES.OPERATIONS]: exports.filter(e => ['operations', 'supply_chain', 'inventory'].includes(e.category))
+      [ROLES.ADMIN]: exportsArray,
+      [ROLES.MANAGER]: exportsArray.filter(e => ['dashboard', 'report', 'data'].includes(e.type)),
+      [ROLES.ANALYST]: exportsArray.filter(e => ['data', 'analysis', 'custom'].includes(e.type)),
+      [ROLES.VIEWER]: exportsArray.filter(e => e.is_public || e.role === userRole),
+      [ROLES.SALES]: exportsArray.filter(e => ['sales', 'customer', 'marketing'].includes(e.category)),
+      [ROLES.HR]: exportsArray.filter(e => ['hr', 'employee', 'performance'].includes(e.category)),
+      [ROLES.FINANCE]: exportsArray.filter(e => ['finance', 'budget', 'revenue'].includes(e.category)),
+      [ROLES.OPERATIONS]: exportsArray.filter(e => ['operations', 'supply_chain', 'inventory'].includes(e.category))
     };
-    return roleExports[userRole] || exports;
+    return roleExports[userRole] || exportsArray;
   };
 
   if (loading) {

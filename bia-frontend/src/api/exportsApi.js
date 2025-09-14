@@ -31,12 +31,13 @@ const apiPaths = {
 };
 
 // Export data operations
-export const exportData = async (data, format = 'csv', filename = null) => {
+export const exportData = async (dataType, filters = {}, format = 'csv', includeHeaders = true) => {
   try {
     const response = await axios.post(apiPaths.EXPORT_DATA, {
-      data,
+      dataType,
       format,
-      filename
+      filters,
+      includeHeaders
     });
     return response.data;
   } catch (error) {

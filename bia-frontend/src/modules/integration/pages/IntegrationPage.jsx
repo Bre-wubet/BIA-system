@@ -59,11 +59,15 @@ import {
 } from "react-icons/md";
 
   const IntegrationPage = () => {
-    const defaultFilters = {
-      module_name: "",
-      type: "",
-      status: ""
-    };
+  const defaultFilters = {
+    module_name: "",
+    type: "",
+    status: "",
+    sync_frequency_min: "",
+    sync_frequency_max: "",
+    last_sync_from: "",
+    last_sync_to: ""
+  };
 
     const [filters, setFilters] = useState(defaultFilters);
     const [dataSources, setDataSources] = useState([]);
@@ -176,17 +180,19 @@ import {
         fetchSyncQueue();
         fetchIntegrationLogs();
       }
-    }, 30000); // 30 seconds
+    }, 3600000); // 1 hour
 
     return () => clearInterval(interval);
   }, [refreshing, filters]);
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
+  const handleFilterChange = (name, value) => {
+    const newFilters = {
+      ...filters,
       [name]: value
-    }));
+    };
+    setFilters(newFilters);
+    // Auto-apply filters for better UX
+    fetchDataSources(newFilters);
   };
 
   const handleApplyFilters = () => {
@@ -243,13 +249,50 @@ import {
       filtered = filtered.filter(ds => 
         ds.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ds.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ds.type.toLowerCase().includes(searchTerm.toLowerCase())
+        ds.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ds.module?.module_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
+    }
+
+    // Apply module filter
+    if (filters.module_name) {
+      filtered = filtered.filter(ds => ds.module?.module_name === filters.module_name);
+    }
+
+    // Apply type filter
+    if (filters.type) {
+      filtered = filtered.filter(ds => ds.type === filters.type);
     }
 
     // Apply status filter
     if (filters.status) {
       filtered = filtered.filter(ds => ds.status === filters.status);
+    }
+
+    // Apply sync frequency filters
+    if (filters.sync_frequency_min) {
+      const minFreq = parseInt(filters.sync_frequency_min);
+      filtered = filtered.filter(ds => ds.sync_frequency >= minFreq);
+    }
+    if (filters.sync_frequency_max) {
+      const maxFreq = parseInt(filters.sync_frequency_max);
+      filtered = filtered.filter(ds => ds.sync_frequency <= maxFreq);
+    }
+
+    // Apply last sync date filters
+    if (filters.last_sync_from) {
+      const fromDate = new Date(filters.last_sync_from);
+      filtered = filtered.filter(ds => {
+        if (!ds.last_sync) return false;
+        return new Date(ds.last_sync) >= fromDate;
+      });
+    }
+    if (filters.last_sync_to) {
+      const toDate = new Date(filters.last_sync_to);
+      filtered = filtered.filter(ds => {
+        if (!ds.last_sync) return false;
+        return new Date(ds.last_sync) <= toDate;
+      });
     }
 
     // Apply sorting
@@ -275,7 +318,7 @@ import {
     });
 
     return filtered;
-  }, [dataSources, searchTerm, filters.status, sortBy, sortOrder]);
+  }, [dataSources, searchTerm, filters, sortBy, sortOrder]);
 
   // Get unique modules and types for filters
   const modules = useMemo(() => {
@@ -558,84 +601,272 @@ import {
       </div>
       {/* Search and Filter Controls */}
       <Card>
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-          <div className="flex flex-col sm:flex-row gap-4 flex-1">
-            <div className="flex-1 max-w-md">
-              <SearchInput
-                placeholder="Search data sources..."
-                value={searchTerm}
-                onChange={handleSearch}
-                icon={<MdSearch className="w-4 h-4" />}
-              />
-            </div>
-            <div className="flex gap-2">
-              <FilterDropdown
-                label="Module"
-                value={filters.module_name}
-                onChange={(value) => setFilters(prev => ({ ...prev, module_name: value }))}
-                options={[
-                  { value: '', label: 'All Modules' },
-                  ...modules.map(module => ({ value: module, label: module.charAt(0).toUpperCase() + module.slice(1) }))
-                ]}
-              />
-              <FilterDropdown
-                label="Type"
-                value={filters.type}
-                onChange={(value) => setFilters(prev => ({ ...prev, type: value }))}
-                options={[
-                  { value: '', label: 'All Types' },
-                  ...types.map(type => ({ value: type, label: type.charAt(0).toUpperCase() + type.slice(1) }))
-                ]}
-              />
-              <FilterDropdown
-                label="Status"
-                value={filters.status}
-                onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
-                options={[
-                  { value: '', label: 'All Status' },
-                  { value: 'active', label: 'Active' },
-                  { value: 'inactive', label: 'Inactive' },
-                  { value: 'pending', label: 'Pending' },
-                  { value: 'error', label: 'Error' }
-                ]}
-              />
-            </div>
+        <div className="space-y-4">
+          {/* Filter Presets */}
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-medium text-gray-700 mr-2">Quick Filters:</span>
+            {[
+              { key: 'all', label: 'All Sources', icon: <MdStorage className="w-4 h-4" />, filters: defaultFilters },
+              { key: 'active', label: 'Active Only', icon: <MdCheckCircle className="w-4 h-4" />, filters: { ...defaultFilters, status: 'active' } },
+              { key: 'errors', label: 'Errors Only', icon: <MdError className="w-4 h-4" />, filters: { ...defaultFilters, status: 'error' } },
+              { key: 'pending', label: 'Pending Only', icon: <MdWarning className="w-4 h-4" />, filters: { ...defaultFilters, status: 'pending' } },
+              { key: 'internal', label: 'Internal Modules', icon: <MdViewModule className="w-4 h-4" />, filters: { ...defaultFilters, type: 'internal_module' } },
+              { key: 'database', label: 'Databases', icon: <MdStorage className="w-4 h-4" />, filters: { ...defaultFilters, type: 'database' } },
+              { key: 'api', label: 'APIs', icon: <MdCastConnected className="w-4 h-4" />, filters: { ...defaultFilters, type: 'api' } }
+            ].map((preset) => {
+              const isActive = JSON.stringify(filters) === JSON.stringify(preset.filters);
+              return (
+                <button
+                  key={preset.key}
+                  onClick={() => {
+                    setFilters(preset.filters);
+                    fetchDataSources(preset.filters);
+                  }}
+                  className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                    isActive
+                      ? 'bg-blue-100 border-blue-300 text-blue-700'
+                      : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {preset.icon}
+                  {preset.label}
+                </button>
+              );
+            })}
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+              <div className="flex-1 max-w-md">
+                <SearchInput
+                  placeholder="Search data sources..."
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  icon={<MdSearch className="w-4 h-4" />}
+                />
+              </div>
+              <div className="flex gap-2">
+                <FilterDropdown
+                  label="Module"
+                  value={filters.module_name}
+                  onChange={(value) => handleFilterChange('module_name', value)}
+                  options={[
+                    { value: '', label: 'All Modules' },
+                    ...modules.map(module => ({ value: module, label: module.charAt(0).toUpperCase() + module.slice(1) }))
+                  ]}
+                />
+                <FilterDropdown
+                  label="Type"
+                  value={filters.type}
+                  onChange={(value) => handleFilterChange('type', value)}
+                  options={[
+                    { value: '', label: 'All Types' },
+                    ...types.map(type => ({ value: type, label: type.charAt(0).toUpperCase() + type.slice(1) }))
+                  ]}
+                />
+                <FilterDropdown
+                  label="Status"
+                  value={filters.status}
+                  onChange={(value) => handleFilterChange('status', value)}
+                  options={[
+                    { value: '', label: 'All Status' },
+                    { value: 'active', label: 'Active' },
+                    { value: 'inactive', label: 'Inactive' },
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'error', label: 'Error' }
+                  ]}
+                />
+              </div>
+            </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">View:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">View:</span>
+                <Button
+                  variant={viewMode === 'grid' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <MdViewModule className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <MdViewList className="w-4 h-4" />
+                </Button>
+              </div>
               <Button
-                variant={viewMode === 'grid' ? 'primary' : 'outline'}
+                onClick={handleApplyFilters}
+                variant="primary"
                 size="sm"
-                onClick={() => setViewMode('grid')}
+                disabled={loading}
               >
-                <MdViewModule className="w-4 h-4" />
+                {loading ? "Filtering..." : "Apply"}
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'primary' : 'outline'}
+                onClick={handleResetFilters}
+                variant="outline"
                 size="sm"
-                onClick={() => setViewMode('list')}
+                disabled={!filters.type && !filters.module_name && !filters.status && !filters.sync_frequency_min && !filters.sync_frequency_max && !filters.last_sync_from && !filters.last_sync_to}
               >
-                <MdViewList className="w-4 h-4" />
+                Reset
               </Button>
             </div>
-            <Button
-              onClick={handleApplyFilters}
-              variant="primary"
-              size="sm"
-              disabled={loading}
-            >
-              {loading ? "Filtering..." : "Apply"}
-            </Button>
-            <Button
-              onClick={handleResetFilters}
-              variant="outline"
-              size="sm"
-              disabled={!filters.type && !filters.module_name && !filters.status}
-            >
-              Reset
-            </Button>
           </div>
+
+          {/* Advanced Filters */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+              >
+                <MdFilterList className="w-4 h-4" />
+                Advanced Filters
+                <span className={`transform transition-transform ${showFilters ? 'rotate-180' : ''}`}>
+                  ▼
+                </span>
+              </button>
+            </div>
+            
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Min Sync Frequency (hours)
+                  </label>
+                  <input
+                    type="number"
+                    value={filters.sync_frequency_min}
+                    onChange={(e) => handleFilterChange('sync_frequency_min', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., 1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max Sync Frequency (hours)
+                  </label>
+                  <input
+                    type="number"
+                    value={filters.sync_frequency_max}
+                    onChange={(e) => handleFilterChange('sync_frequency_max', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., 24"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Sync From
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.last_sync_from}
+                    onChange={(e) => handleFilterChange('last_sync_from', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Sync To
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.last_sync_to}
+                    onChange={(e) => handleFilterChange('last_sync_to', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Active Filters Display */}
+          {(filters.module_name || filters.type || filters.status || filters.sync_frequency_min || filters.sync_frequency_max || filters.last_sync_from || filters.last_sync_to) && (
+            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <span className="text-sm font-medium text-blue-700">Active Filters:</span>
+              <div className="flex flex-wrap gap-2">
+                {filters.module_name && (
+                  <Badge variant="blue" className="flex items-center gap-1">
+                    Module: {filters.module_name}
+                    <button
+                      onClick={() => handleFilterChange('module_name', '')}
+                      className="ml-1 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                )}
+                {filters.type && (
+                  <Badge variant="blue" className="flex items-center gap-1">
+                    Type: {filters.type}
+                    <button
+                      onClick={() => handleFilterChange('type', '')}
+                      className="ml-1 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                )}
+                {filters.status && (
+                  <Badge variant="blue" className="flex items-center gap-1">
+                    Status: {filters.status}
+                    <button
+                      onClick={() => handleFilterChange('status', '')}
+                      className="ml-1 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                )}
+                {filters.sync_frequency_min && (
+                  <Badge variant="blue" className="flex items-center gap-1">
+                    Min Freq: {filters.sync_frequency_min}h
+                    <button
+                      onClick={() => handleFilterChange('sync_frequency_min', '')}
+                      className="ml-1 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                )}
+                {filters.sync_frequency_max && (
+                  <Badge variant="blue" className="flex items-center gap-1">
+                    Max Freq: {filters.sync_frequency_max}h
+                    <button
+                      onClick={() => handleFilterChange('sync_frequency_max', '')}
+                      className="ml-1 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                )}
+                {filters.last_sync_from && (
+                  <Badge variant="blue" className="flex items-center gap-1">
+                    From: {filters.last_sync_from}
+                    <button
+                      onClick={() => handleFilterChange('last_sync_from', '')}
+                      className="ml-1 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                )}
+                {filters.last_sync_to && (
+                  <Badge variant="blue" className="flex items-center gap-1">
+                    To: {filters.last_sync_to}
+                    <button
+                      onClick={() => handleFilterChange('last_sync_to', '')}
+                      className="ml-1 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
       {/* Data Sources Section */}

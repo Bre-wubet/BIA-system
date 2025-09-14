@@ -375,7 +375,7 @@ const OverviewPage = () => {
       {/* Recent Alerts */}
       {recentAlerts.length > 0 && (
         <Card>
-          <div className="p-4">
+          <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <MdWarning className="w-5 h-5 text-orange-500" />
@@ -391,7 +391,7 @@ const OverviewPage = () => {
             </div>
             <div className="space-y-2">
               {recentAlerts.map((alert, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                <div key={index} className="flex items-center gap-3 bg-orange-50 rounded-lg">
                   <div className={`w-2 h-2 rounded-full ${
                     alert.severity === 'error' ? 'bg-red-500' :
                     alert.severity === 'warning' ? 'bg-orange-500' : 'bg-blue-500'
@@ -420,7 +420,7 @@ const OverviewPage = () => {
         <Card className="hover:shadow-lg transition-shadow duration-200">
           <div>
             <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
+              <div className="bg-blue-100 rounded-lg">
                 <MdGpsFixed className="w-6 h-6 text-blue-600" />
               </div>
               <div className="ml-4">
@@ -435,7 +435,7 @@ const OverviewPage = () => {
         <Card className="hover:shadow-lg transition-shadow duration-200">
           <div> 
             <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
+              <div className="bg-green-100 rounded-lg">
                 <MdCheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div className="ml-4">
@@ -480,7 +480,7 @@ const OverviewPage = () => {
 
       {/* KPI Widgets */}
       <Card>
-        <div className="p-6">
+        <div>
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">Key Performance Indicators</h3>
             <div className="flex items-center gap-2">

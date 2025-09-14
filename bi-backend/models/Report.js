@@ -56,13 +56,13 @@ async function createReport(reportData) {
   ];
 
   const result = await database.query(query, values);
-  return result[0];
+  return result.rows[0];
 }
 
 async function findById(id) {
   const query = `SELECT * FROM ${tableName} WHERE id = $1 AND is_active = true`;
   const result = await database.query(query, [id]);
-  return result[0] || null;
+  return result.rows[0] || null;
 }
 
 async function findByType(type) {
@@ -126,13 +126,13 @@ async function updateReport(id, updateData) {
   ];
 
   const result = await database.query(query, values);
-  return result[0];
+  return result.rows[0];
 }
 
 async function deleteReport(id) {
   const query = `UPDATE ${tableName} SET is_active = false WHERE id = $1 RETURNING id`;
   const result = await database.query(query, [id]);
-  return result[0];
+  return result.rows[0];
 }
 
 async function getScheduledReports() {
@@ -184,7 +184,7 @@ async function updateLastGeneratedAt(id) {
     RETURNING *
   `;
   const result = await database.query(query, [id]);
-  return result[0];
+  return result.rows[0];
 }
 
 async function updateSchedule(id, schedule) {
@@ -195,7 +195,7 @@ async function updateSchedule(id, schedule) {
     RETURNING *
   `;
   const result = await database.query(query, [schedule, id]);
-  return result[0];
+  return result.rows[0];
 }
 
 async function updateRecipients(id, recipients) {
@@ -206,7 +206,7 @@ async function updateRecipients(id, recipients) {
     RETURNING *
   `;
   const result = await database.query(query, [JSON.stringify(recipients), id]);
-  return result[0];
+  return result.rows[0];
 }
 
 async function getStats() {
@@ -220,7 +220,7 @@ async function getStats() {
     WHERE is_active = true
   `;
   const result = await database.query(query);
-  return result[0];
+  return result.rows[0];
 }
 
 async function getTemplates({ category, role } = {}) {
@@ -249,7 +249,7 @@ async function getTemplates({ category, role } = {}) {
 async function getTemplate(id) {
   const query = `SELECT * FROM ${tableName} WHERE id = $1 AND is_active = true AND is_template = true`;
   const result = await database.query(query, [id]);
-  return result[0] || null;
+  return result.rows[0] || null;
 }
 
 async function updateSharing(id, shareOptions) {
@@ -274,7 +274,7 @@ async function updateSharing(id, shareOptions) {
     id
   ]);
   
-  return result[0];
+  return result.rows[0];
 }
 
 export default {

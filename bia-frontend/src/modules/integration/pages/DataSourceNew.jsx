@@ -50,7 +50,7 @@ const DataSourceNew = () => {
   const [touchedFields, setTouchedFields] = useState({});
   const [isFormDirty, setIsFormDirty] = useState(false);
 
-  const totalSteps = 4;
+  const totalSteps = 3;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -117,14 +117,12 @@ const DataSourceNew = () => {
           if (!formData.connection_config.url) errors.url = 'Webhook URL is required';
         }
         break;
-      case 3: // Module & Query
+      case 3: // Module & Query & Settings
         if (formData.type === 'internal_module') {
           if (!formData.module.module_name) errors.module_name = 'Module is required';
           if (!formData.module.fact_tables) errors.fact_tables = 'Table is required';
         }
         if (!formData.query.trim()) errors.query = 'Query is required';
-        break;
-      case 4: // Settings
         if (formData.sync_frequency < 60) errors.sync_frequency = 'Sync frequency must be at least 60 seconds';
         break;
     }
@@ -298,91 +296,196 @@ const DataSourceNew = () => {
     { value: 'webhook', label: 'Webhook' },
   ];
 
+  // Query templates for different data source types
+  const getQueryTemplates = () => {
+    const baseTemplates = [
+      {
+        name: "Select All",
+        description: "Basic select query",
+        query: "SELECT * FROM table_name LIMIT 1000;"
+      },
+      {
+        name: "Filtered Data",
+        description: "Query with WHERE clause",
+        query: "SELECT * FROM table_name WHERE created_date >= '2024-01-01' LIMIT 1000;"
+      },
+      {
+        name: "Aggregated Data",
+        description: "Query with GROUP BY",
+        query: "SELECT column1, COUNT(*) as count, SUM(column2) as total FROM table_name GROUP BY column1;"
+      }
+    ];
+
+    if (formData.type === 'internal_module' && formData.module.module_name) {
+      const moduleTemplates = {
+        sales: [
+          {
+            name: "Sales Summary",
+            description: "Daily sales summary",
+            query: `SELECT 
+  DATE(created_at) as date,
+  COUNT(*) as total_orders,
+  SUM(amount) as total_revenue
+FROM ${formData.module.fact_tables || 'fact_sales'}
+WHERE created_at >= CURRENT_DATE - INTERVAL 30 DAY
+GROUP BY DATE(created_at)
+ORDER BY date DESC;`
+          },
+          {
+            name: "Top Products",
+            description: "Best selling products",
+            query: `SELECT 
+  product_id,
+  product_name,
+  SUM(quantity) as total_sold,
+  SUM(amount) as total_revenue
+FROM ${formData.module.fact_tables || 'fact_sales'}
+GROUP BY product_id, product_name
+ORDER BY total_sold DESC
+LIMIT 10;`
+          }
+        ],
+        hr: [
+          {
+            name: "Employee Summary",
+            description: "Employee count by department",
+            query: `SELECT 
+  department,
+  COUNT(*) as employee_count,
+  AVG(salary) as avg_salary
+FROM ${formData.module.fact_tables || 'fact_employees'}
+GROUP BY department
+ORDER BY employee_count DESC;`
+          }
+        ],
+        finance: [
+          {
+            name: "Financial Summary",
+            description: "Monthly financial overview",
+            query: `SELECT 
+  DATE_TRUNC('month', transaction_date) as month,
+  SUM(amount) as total_amount,
+  COUNT(*) as transaction_count
+FROM ${formData.module.fact_tables || 'fact_financials'}
+WHERE transaction_date >= CURRENT_DATE - INTERVAL 12 MONTH
+GROUP BY DATE_TRUNC('month', transaction_date)
+ORDER BY month DESC;`
+          }
+        ],
+        supply_chain: [
+          {
+            name: "Inventory Status",
+            description: "Current inventory levels",
+            query: `SELECT 
+  p.product_name,
+  i.current_stock,
+  i.min_stock_level,
+  CASE 
+    WHEN i.current_stock <= i.min_stock_level THEN 'Low Stock'
+    ELSE 'In Stock'
+  END as status
+FROM ${formData.module.fact_tables || 'fact_inventory'} i
+JOIN dim_products p ON i.product_id = p.product_id
+ORDER BY i.current_stock ASC;`
+          }
+        ]
+      };
+
+      const moduleSpecificTemplates = moduleTemplates[formData.module.module_name] || [];
+      return [...baseTemplates, ...moduleSpecificTemplates];
+    }
+
+    return baseTemplates;
+  };
+
   // Render data types details based on choosing the module name
   const renderModuleDataTypeDetails = () => {
-    switch (formData.module.module_name) {
-      case "sales":
-      return (
-        <div className="mb-4">
-          <label className="block font-medium">Store Tables</label>
-          <select
-            id="fact_tables"
-            value={formData.module.fact_tables}
-            className="w-full border p-2 rounded font-mono"
-            onChange={(e) => handleFactTablesChange(e, "fact_tables")}
-          >
-            <option value="fact_sales">fact_sales</option>
-            <option value="fact_transactions">fact_transactions</option>
-            <option value="fact_performance">fact_performance</option>
-          </select>
-        </div>
-      );
-      case "hr":
-      return (
-        <div className="mb-4">
-          <label className="block font-medium">Store Tables</label>
-          <select
-            id="fact_tables"
-            value={formData.module.fact_tables}
-            className="w-full border p-2 rounded font-mono"
-            onChange={(e) => handleFactTablesChange(e, "fact_tables")}
-          >
-            <option value="fact_employees">fact_employees</option>
-            <option value="fact_attendance">fact_attendance</option>
-            <option value="fact_performance">fact_performance</option>
-          </select>
-        </div>
-      );
-      case "finance":
-      return (
-        <div className="mb-4">
-          <label className="block font-medium">Store Tables</label>
-          <select
-            id="fact_tables"
-            value={formData.module.fact_tables}
-            className="w-full border p-2 rounded font-mono"
-            onChange={(e) => handleFactTablesChange(e, "fact_tables")}
-          >
-            <option value="fact_financials">fact_financials</option>
-            <option value="fact_budget">fact_budget</option>
-          </select>
-        </div>
-      );
-      case "supply_chain":
-      return (
-        <div className="mb-4">
-          <label className="block font-medium">Store Tables</label>
-          <select
-            id="fact_tables"
-            value={formData.module.fact_tables}
-            className="w-full border p-2 rounded font-mono"
-            onChange={(e) => handleFactTablesChange(e, "fact_tables")}
-          >
-            <option value="dim_products">dim_products</option>
-            <option value="dim_suppliers">dim_suppliers</option>
-            <option value="dim_warehouses">dim_warehouses</option>
-            <option value="dim_distributors">dim_distributors</option>
-            <option value="dim_users">dim_users</option>
-            <option value="dim_date">dim_date</option>
-            <option value="dim_logistics_providers">dim_logistics_providers</option>
-            <option value="dim_drivers">dim_drivers</option>
-            <option value="dim_contracts">dim_contracts</option>
+    const getTableOptions = (moduleName) => {
+      const tableOptions = {
+        sales: [
+          { value: "fact_sales", label: "Sales Transactions", description: "Core sales data and transactions" },
+          { value: "fact_transactions", label: "Payment Transactions", description: "Payment and billing information" },
+          { value: "fact_performance", label: "Sales Performance", description: "Sales metrics and KPIs" }
+        ],
+        hr: [
+          { value: "fact_employees", label: "Employee Records", description: "Employee master data and profiles" },
+          { value: "fact_attendance", label: "Attendance Records", description: "Time tracking and attendance data" },
+          { value: "fact_performance", label: "Performance Reviews", description: "Employee performance evaluations" }
+        ],
+        finance: [
+          { value: "fact_financials", label: "Financial Transactions", description: "Core financial transaction data" },
+          { value: "fact_budget", label: "Budget Planning", description: "Budget allocation and planning data" }
+        ],
+        supply_chain: [
+          { value: "dim_products", label: "Products (Dimension)", description: "Product master data and specifications" },
+          { value: "dim_suppliers", label: "Suppliers (Dimension)", description: "Supplier information and details" },
+          { value: "dim_warehouses", label: "Warehouses (Dimension)", description: "Warehouse locations and details" },
+          { value: "dim_distributors", label: "Distributors (Dimension)", description: "Distributor network information" },
+          { value: "dim_users", label: "Users (Dimension)", description: "User accounts and permissions" },
+          { value: "dim_date", label: "Date (Dimension)", description: "Date and time reference data" },
+          { value: "dim_logistics_providers", label: "Logistics Providers (Dimension)", description: "3PL and logistics partner data" },
+          { value: "dim_drivers", label: "Drivers (Dimension)", description: "Driver information and credentials" },
+          { value: "dim_contracts", label: "Contracts (Dimension)", description: "Contract terms and agreements" },
+          { value: "fact_procurement", label: "Procurement (Fact)", description: "Purchase orders and procurement data" },
+          { value: "fact_goods_receipt", label: "Goods Receipt (Fact)", description: "Inventory receipt and inspection data" },
+          { value: "fact_invoices", label: "Invoices (Fact)", description: "Billing and invoice transaction data" },
+          { value: "fact_inventory", label: "Inventory (Fact)", description: "Stock levels and inventory movements" },
+          { value: "stock_transfer", label: "Stock Transfers (Fact)", description: "Inter-warehouse transfer data" },
+          { value: "fact_distribution", label: "Distribution (Fact)", description: "Distribution and delivery data" },
+          { value: "fact_delivery_routes", label: "Delivery Routes (Fact)", description: "Route planning and execution data" },
+          { value: "fact_supplier_performance", label: "Supplier Performance (Fact)", description: "Supplier metrics and evaluations" },
+          { value: "fact_distribution_kpis", label: "Distribution KPIs (Fact)", description: "Key performance indicators" }
+        ]
+      };
+      return tableOptions[moduleName] || [];
+    };
 
-            <option value="fact_procurement">fact_procurement</option>
-            <option value="fact_goods_receipt">fact_goods_receipt</option>
-            <option value="fact_invoices">fact_invoices</option>
-            <option value="fact_inventory">fact_inventory</option>
-            <option value="stock_transfer">stock_transfer</option>
-            <option value="fact_distribution">fact_distribution</option>
-            <option value="fact_delivery_routes">fact_delivery_routes</option>
-            <option value="fact_supplier_performance">fact_supplier_performance</option>
-            <option value="fact_distribution_kpis">fact_distribution_kpis</option>
-          </select>
+    const tableOptions = getTableOptions(formData.module.module_name);
+
+    if (tableOptions.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          <MdInfo className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+          <p>Select a business module to see available data tables</p>
         </div>
       );
-      default:
-        return (<div>Select a module to see details</div>);
     }
+
+    return (
+      <div className="space-y-2">
+        <select
+          id="fact_tables"
+          value={formData.module.fact_tables}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            validationErrors.fact_tables ? 'border-red-500' : 'border-gray-300'
+          }`}
+          onChange={handleFactTablesChange}
+        >
+          <option value="">Select a data table</option>
+          {tableOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        
+        {formData.module.fact_tables && (
+          <div className="mt-2 p-3 bg-blue-50 rounded-md border border-blue-200">
+            <div className="flex items-start gap-2">
+              <MdInfo className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-blue-900">
+                  {tableOptions.find(opt => opt.value === formData.module.fact_tables)?.label}
+                </p>
+                <p className="text-blue-700 mt-1">
+                  {tableOptions.find(opt => opt.value === formData.module.fact_tables)?.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Render connection details form based on data source type
@@ -707,7 +810,6 @@ const DataSourceNew = () => {
       case 1: return 'Basic Information';
       case 2: return 'Connection Details';
       case 3: return 'Module & Query';
-      case 4: return 'Settings & Test';
       default: return 'Complete';
     }
   };
@@ -917,142 +1019,270 @@ const DataSourceNew = () => {
               </div>
             )}
 
-            {/* Step 3: Module & Query */}
+            {/* Step 3: Module & Query & Settings */}
             {currentStep === 3 && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
                     <MdCode className="w-8 h-8 text-purple-600" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Module & Query</h2>
-                  <p className="text-gray-600">Configure module settings and data query</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Module & Query Configuration</h2>
+                  <p className="text-gray-600">Configure module settings, data query, and sync preferences</p>
                 </div>
 
+                {/* Module Configuration */}
                 {formData.type === 'internal_module' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Module *
-                      </label>
-                      <select
-                        value={formData.module.module_name}
-                        onChange={handleModuleNameChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select module</option>
-                        <option value="hr">HR</option>
-                        <option value="crm">CRM</option>
-                        <option value="finance">Finance</option>
-                        <option value="sales">Sales</option>
-                        <option value="procurement">Procurement</option>
-                        <option value="supply_chain">Supply Chain</option>
-                        <option value="project_management">Project Management</option>
-                        <option value="inventory">Inventory</option>
-                        <option value="manufacturing">Manufacturing</option>
-                        <option value="partner_portal">Partner Portal</option>
-                      </select>
-                    </div>
+                  <Card className="p-6">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <MdStorage className="w-5 h-5 text-blue-600" />
+                        Module Configuration
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Business Module *
+                          </label>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {[
+                              { value: 'hr', label: 'Human Resources', icon: '👥', description: 'Employee data and HR processes' },
+                              { value: 'crm', label: 'CRM', icon: '🤝', description: 'Customer relationship management' },
+                              { value: 'finance', label: 'Finance', icon: '💰', description: 'Financial transactions and accounting' },
+                              { value: 'sales', label: 'Sales', icon: '📈', description: 'Sales data and performance' },
+                              { value: 'procurement', label: 'Procurement', icon: '🛒', description: 'Purchase orders and vendors' },
+                              { value: 'supply_chain', label: 'Supply Chain', icon: '🚚', description: 'Logistics and distribution' },
+                              { value: 'project_management', label: 'Projects', icon: '📋', description: 'Project tracking and management' },
+                              { value: 'inventory', label: 'Inventory', icon: '📦', description: 'Stock and warehouse management' },
+                              { value: 'manufacturing', label: 'Manufacturing', icon: '🏭', description: 'Production and operations' },
+                              { value: 'partner_portal', label: 'Partner Portal', icon: '🌐', description: 'External partner integration' }
+                            ].map((module) => (
+                              <button
+                                key={module.value}
+                                type="button"
+                                onClick={() => setFormData(prev => ({ 
+                                  ...prev, 
+                                  module: { ...prev.module, module_name: module.value, fact_tables: '' }
+                                }))}
+                                className={`p-3 text-left border-2 rounded-lg transition-colors ${
+                                  formData.module.module_name === module.value
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-lg">{module.icon}</span>
+                                  <span className="font-medium text-sm">{module.label}</span>
+                                </div>
+                                <p className="text-xs text-gray-500">{module.description}</p>
+                              </button>
+                            ))}
+                          </div>
+                          {validationErrors.module_name && (
+                            <p className="mt-1 text-sm text-red-600">{validationErrors.module_name}</p>
+                          )}
+                        </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Table *
-                      </label>
-                      {renderModuleDataTypeDetails()}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Data Table *
+                          </label>
+                          {renderModuleDataTypeDetails()}
+                          {validationErrors.fact_tables && (
+                            <p className="mt-1 text-sm text-red-600">{validationErrors.fact_tables}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </Card>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Query *
-                  </label>
-                  <textarea
-                    name="query"
-                    value={formData.query}
-                    onChange={handleChange}
-                    rows={6}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                    placeholder="Enter your SQL query or data extraction query"
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Enter the query to extract data from your source
-                  </p>
-                </div>
-              </div>
-            )}
+                {/* Query Configuration */}
+                <Card className="p-6">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <MdCode className="w-5 h-5 text-green-600" />
+                      Data Query Configuration
+                    </h3>
+                    <div className="space-y-4">
+                      {/* Query Templates */}
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Query Templates
+                        </label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {getQueryTemplates().map((template) => (
+                            <button
+                              key={template.name}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, query: template.query }))}
+                              className="p-3 text-left border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                            >
+                              <div className="font-medium text-sm text-gray-900">{template.name}</div>
+                              <div className="text-xs text-gray-500 mt-1">{template.description}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-            {/* Step 4: Settings & Test */}
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
-                    <MdSchedule className="w-8 h-8 text-orange-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Settings & Test</h2>
-                  <p className="text-gray-600">Configure sync settings and test your data source</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Sync Frequency (seconds) *
-                    </label>
-                    <input
-                      type="number"
-                      name="sync_frequency"
-                      value={formData.sync_frequency}
-                      onChange={handleChange}
-                      min="60"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="mt-1 text-sm text-gray-500">
-                      Minimum: 60 seconds (1 minute)
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Initial Status
-                    </label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="inactive">Inactive</option>
-                      <option value="active">Active</option>
-                    </select>
-                    <p className="mt-1 text-sm text-gray-500">
-                      You can activate it later after testing
-                    </p>
-                  </div>
-                </div>
-
-                {/* Summary */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration Summary</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Name:</span>
-                      <span className="ml-2 text-gray-900">{formData.name || 'Not specified'}</span>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Query *
+                        </label>
+                        <div className="relative">
+                          <textarea
+                            name="query"
+                            value={formData.query}
+                            onChange={handleChange}
+                            rows={8}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm ${
+                              validationErrors.query ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="Enter your SQL query or data extraction query..."
+                          />
+                          <div className="absolute top-2 right-2 flex gap-1">
+                            <Tooltip content="Query syntax validation">
+                              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                <MdHelp className="w-4 h-4 text-gray-500" />
+                              </div>
+                            </Tooltip>
+                            <Tooltip content="Clear query">
+                              <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, query: '' }))}
+                                className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200"
+                              >
+                                <MdRefresh className="w-4 h-4 text-gray-500" />
+                              </button>
+                            </Tooltip>
+                          </div>
+                        </div>
+                        {validationErrors.query && (
+                          <p className="mt-1 text-sm text-red-600">{validationErrors.query}</p>
+                        )}
+                        <div className="mt-2 flex items-center gap-4 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <MdInfo className="w-4 h-4" />
+                            Supports SQL, API endpoints, and custom queries
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MdSecurity className="w-4 h-4" />
+                            Queries are validated for security
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
+                  </div>
+                </Card>
+
+                {/* Sync Settings */}
+                <Card className="p-6">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <MdSchedule className="w-5 h-5 text-orange-600" />
+                      Sync Settings
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Sync Frequency (seconds) *
+                        </label>
+                        <input
+                          type="number"
+                          name="sync_frequency"
+                          value={formData.sync_frequency}
+                          onChange={handleChange}
+                          min="60"
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            validationErrors.sync_frequency ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {validationErrors.sync_frequency && (
+                          <p className="mt-1 text-sm text-red-600">{validationErrors.sync_frequency}</p>
+                        )}
+                        <p className="mt-1 text-sm text-gray-500">
+                          Minimum: 60 seconds (1 minute)
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Initial Status
+                        </label>
+                        <select
+                          name="status"
+                          value={formData.status}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="inactive">Inactive</option>
+                          <option value="active">Active</option>
+                        </select>
+                        <p className="mt-1 text-sm text-gray-500">
+                          You can activate it later after testing
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Configuration Summary */}
+                <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <MdDataUsage className="w-5 h-5 text-blue-600" />
+                    Configuration Summary
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-700">Data Source Name:</span>
+                      <span className="text-gray-900 font-mono">{formData.name || 'Not specified'}</span>
+                    </div>
+                    <div className="flex flex-col">
                       <span className="font-medium text-gray-700">Type:</span>
-                      <span className="ml-2 text-gray-900">{formData.type || 'Not specified'}</span>
+                      <span className="text-gray-900 capitalize">{formData.type || 'Not specified'}</span>
                     </div>
-                    <div>
+                    <div className="flex flex-col">
                       <span className="font-medium text-gray-700">Sync Frequency:</span>
-                      <span className="ml-2 text-gray-900">{formData.sync_frequency} seconds</span>
+                      <span className="text-gray-900">{formData.sync_frequency} seconds</span>
                     </div>
-                    <div>
+                    <div className="flex flex-col">
                       <span className="font-medium text-gray-700">Status:</span>
-                      <span className="ml-2 text-gray-900 capitalize">{formData.status}</span>
+                      <span className="text-gray-900 capitalize">{formData.status}</span>
                     </div>
+                    {formData.type === 'internal_module' && (
+                      <>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-700">Module:</span>
+                          <span className="text-gray-900 capitalize flex items-center gap-1">
+                            {formData.module.module_name ? (
+                              <>
+                                {[
+                                  { value: 'hr', icon: '👥' },
+                                  { value: 'crm', icon: '🤝' },
+                                  { value: 'finance', icon: '💰' },
+                                  { value: 'sales', icon: '📈' },
+                                  { value: 'procurement', icon: '🛒' },
+                                  { value: 'supply_chain', icon: '🚚' },
+                                  { value: 'project_management', icon: '📋' },
+                                  { value: 'inventory', icon: '📦' },
+                                  { value: 'manufacturing', icon: '🏭' },
+                                  { value: 'partner_portal', icon: '🌐' }
+                                ].find(m => m.value === formData.module.module_name)?.icon || '📊'}
+                                {formData.module.module_name}
+                              </>
+                            ) : 'Not selected'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-700">Table:</span>
+                          <span className="text-gray-900 font-mono">{formData.module.fact_tables || 'Not selected'}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                </div>
+                </Card>
               </div>
             )}
+
 
             {/* Navigation */}
             <div className="flex justify-between items-center pt-8 border-t border-gray-200">
