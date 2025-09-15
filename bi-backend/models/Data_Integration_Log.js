@@ -83,17 +83,18 @@ async function findByStatus(status) {
   return await database.query(query, [status]);
 }
 
-async function updateStatusAndLog(id, status, errorLog = null, durationSeconds = null) {
+async function updateStatusAndLog(id, status, errorLog = null, durationSeconds = null, recordCount = null) {
   const query = `
     UPDATE ${tableName}
     SET status = $1,
         error_log = COALESCE($2, error_log),
         duration_seconds = COALESCE($3, duration_seconds),
+        record_count = COALESCE($5, record_count),
         run_timestamp = CURRENT_TIMESTAMP
     WHERE id = $4
     RETURNING *
   `;
-  const result = await database.query(query, [status, errorLog, durationSeconds, id]);
+  const result = await database.query(query, [status, errorLog, durationSeconds, id, recordCount]);
   return result[0];
 }
 

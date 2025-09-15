@@ -219,6 +219,13 @@ export const NAVIGATION_ITEMS = [
     section: 'integration',
     roles: [ROLES.ADMIN, ROLES.ANALYST]
   },
+    {
+    title: 'Sync History',
+    path: ROUTES.HISTORY_SYNC_LOG,
+    icon: 'integration_instructions',
+    section: 'integration',
+    roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]
+  },
 
   // --- Reports Section ---
   {

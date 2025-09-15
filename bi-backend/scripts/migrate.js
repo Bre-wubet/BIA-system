@@ -35,7 +35,7 @@ import { createFactDistributionTable } from '../models/factDataWarehouse/supply-
 import { createFactDeliveryRoutesTable } from '../models/factDataWarehouse/supply-chain/fact_tables/Fact_delivery_route_event.js';
 import { createFactSupplierPerformanceTable } from '../models/factDataWarehouse/supply-chain/fact_tables/Fact_supplier_performance.js';
 import { createFactDistributionKpisTable } from '../models/factDataWarehouse/supply-chain/fact_tables/Fact_distribution_kpis.js'
-
+import { ensureTable } from '../models/Data_Integration_Log_Record.js';
 // ----Test tables
 import { createProductsTable } from '../models/test_tables/Products.js';
 import { createSuppliersTable } from '../models/test_tables/Suppliers.js';
@@ -103,6 +103,7 @@ const migrate = async () => {
     await createFactSupplierPerformanceTable();
     await createFactDistributionKpisTable();
 
+    await ensureTable();
     logger.info('Fact tables created successfully!')
 
     logger.info('Test tables creating...!')

@@ -3,7 +3,8 @@ import DataSource from '../models/DataSource.js';
 import MappingRule from '../models/MappingRule.js';
 import logger from '../config/logger.js';
 import axios from 'axios';
-import {createDataLog} from '../models/Data_Integration_Log.js';
+import DataIntegrationLog, {createDataLog} from '../models/Data_Integration_Log.js';
+import LogRecord from '../models/Data_Integration_Log_Record.js';
 
 const syncQueue = [];
 let isProcessing = false;
@@ -460,6 +461,7 @@ export async function processAndStoreData(rawData, source, dataSourceId) {
   let status = 'success';
   let errorLog = null;
   let transformedRecords = [];
+  let logId = null;
 
   try {
     logger.debug(`Raw data received for DataSource=${dataSourceId}`, {
@@ -467,6 +469,9 @@ export async function processAndStoreData(rawData, source, dataSourceId) {
       isArray: Array.isArray(rawData),
       count: Array.isArray(rawData) ? rawData.length : 1,
     });
+
+    // 0. Ensure log records table exists (idempotent)
+    try { await LogRecord.ensureTable(); } catch {}
 
     // 1. Normalize
     let records = Array.isArray(rawData) ? rawData : [rawData];
@@ -498,7 +503,21 @@ export async function processAndStoreData(rawData, source, dataSourceId) {
       logger.warn(`No target tables defined for DataSource=${dataSourceId}`);
     }
 
-    // 4. Fetch mapping rules
+    // 4. Create initial log entry (pending) to capture logId for record storage
+    try {
+      const pendingLog = await createDataLog({
+        source_system: source,
+        data_source_id: dataSourceId,
+        record_count: 0,
+        status: 'in_progress',
+        run_timestamp: new Date(),
+        error_log: null,
+        duration_seconds: null
+      });
+      logId = pendingLog?.id || null;
+    } catch {}
+
+    // 5. Fetch mapping rules
     let mappingRules = [];
     try {
       mappingRules = await MappingRule.getMappingRules(dataSourceId) || [];
@@ -537,7 +556,7 @@ export async function processAndStoreData(rawData, source, dataSourceId) {
       logger.warn(`Mapping rules fetch failed for DataSource=${dataSourceId}: ${ruleErr.message}`);
     }
 
-    // 5. Transform
+    // 6. Transform
     transformedRecords = [...cleanedRecords];
     if (mappingRules.length > 0) {
       try {
@@ -551,7 +570,7 @@ export async function processAndStoreData(rawData, source, dataSourceId) {
       }
     }
 
-    // 6. Insert
+    // 7. Insert
     for (const record of transformedRecords) {
       try {
         if (!record || Object.keys(record).length === 0) {
@@ -586,6 +605,18 @@ export async function processAndStoreData(rawData, source, dataSourceId) {
       }
     }
 
+    // 8. Persist transformed records as log records if we have a logId (best-effort)
+    try {
+      if (logId && transformedRecords.length > 0) {
+        // Limit bulk insert to reasonable batch sizes
+        const batchSize = 1000;
+        for (let i = 0; i < transformedRecords.length; i += batchSize) {
+          const batch = transformedRecords.slice(i, i + batchSize);
+          await LogRecord.insertMany(logId, batch);
+        }
+      }
+    } catch {}
+
     logger.info(`Data processed for DataSource=${dataSourceId}`, {
       totalRecords,
       insertedRecords,
@@ -599,16 +630,22 @@ export async function processAndStoreData(rawData, source, dataSourceId) {
   } finally {
     const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(2);
     try {
-      await createDataLog({
-        source_system: source,
-        data_source_id: dataSourceId,
-        record_count: insertedRecords,
-        total_records_received: totalRecords,
-        status,
-        error_log: errorLog,
-        duration_seconds: durationSeconds,
-        timestamp: new Date()
-      });
+      if (logId) {
+        // finalize existing log
+        await DataIntegrationLog.updateStatusAndLog(logId, status, errorLog, durationSeconds, insertedRecords);
+      } else {
+        // fallback create when pending failed
+        await createDataLog({
+          source_system: source,
+          data_source_id: dataSourceId,
+          record_count: insertedRecords,
+          total_records_received: totalRecords,
+          status,
+          error_log: errorLog,
+          duration_seconds: durationSeconds,
+          timestamp: new Date()
+        });
+      }
     } catch (logErr) {
       logger.error(`Failed to log sync for DataSource=${dataSourceId}: ${logErr.message}`);
     }
@@ -619,7 +656,8 @@ export async function processAndStoreData(rawData, source, dataSourceId) {
       durationSeconds,
       status,
       error: errorLog,
-      processedRecords: transformedRecords
+      processedRecords: transformedRecords,
+      logId
     };
   }
 }

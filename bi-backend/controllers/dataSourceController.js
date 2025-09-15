@@ -3,6 +3,7 @@ import { asyncHandler } from '../middlewares/errorHandler.js';
 import logger from '../config/logger.js';
 import DataSource from '../models/DataSource.js';
 import IntegratinLog from '../models/Data_Integration_Log.js'
+import LogRecord from '../models/Data_Integration_Log_Record.js';
 import e from 'express';
 
 // Create a new data source
@@ -421,3 +422,40 @@ export const getPaginatedIntegrationLogs = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getLogRecordsByLogId = asyncHandler(async (req, res) => {
+  const { logId } = req.params;
+  const { page = 1, limit = 50 } = req.query;
+
+  const result = await LogRecord.getByLogId(parseInt(logId, 10), {
+    page: parseInt(page, 10) || 1,
+    limit: parseInt(limit, 10) || 50
+  });
+
+  const normalized = Array.isArray(result.data)
+    ? result.data.map(r => ({
+        ...r,
+        record: typeof r.record === 'string' ? (() => { try { return JSON.parse(r.record); } catch { return {}; } })() : r.record
+      }))
+    : [];
+
+  // Fallback for legacy logs that lack stored records
+  if (normalized.length === 0) {
+    return res.status(200).json({
+      success: true,
+      pagination: { total: 0, page: parseInt(page, 10) || 1, limit: parseInt(limit, 10) || 50, totalPages: 0 },
+      data: []
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    pagination: {
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages
+    },
+    data: normalized
+  });
+});

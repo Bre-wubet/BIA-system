@@ -22,6 +22,21 @@ async function seedTables() {
 // (5, 'Universal Electronics',    4.8, 'active',   '654 Innovation St, Shenzhen, China'),
 // (6, 'Continental Logistics',    3.5, 'suspended','987 Supply Chain Blvd, Johannesburg, South Africa'),
 
+//  (7, 'Blue Nile Agro Supply',    4.0, 'active',   '159 Farming District, Bahir Dar, Ethiopia'),
+//           (8, 'EuroSteel Partners',       4.6, 'active',   '753 Steelworks Lane, Hamburg, Germany'),
+//           (9, 'Global Paper Corp.',       3.8, 'active',   '852 Forest Drive, Helsinki, Finland'),
+//           (10,'Nile Pharma Distributors', 4.3, 'active',   '963 Health Park, Khartoum, Sudan');
+
+//                     ('Office Chair', 'CHR-006', 'Furniture', 'pcs', 'finished_good', 'Ergonomic office chair with adjustable height', 'active'),
+//           ('Dining Table', 'TBL-007', 'Furniture', 'pcs', 'finished_good', '6-seater wooden dining table', 'inactive'),
+
+//           ('Printer Ink Cartridge', 'INK-008', 'Consumables', 'pcs', 'consumable', 'Black ink cartridge for office printers', 'active'),
+//           ('AA Batteries Pack', 'BAT-009', 'Consumables', 'pack', 'consumable', 'Pack of 4 AA alkaline batteries', 'active'),
+
+//           ('Installation Service', 'SRV-010', 'Services', 'job', 'service', 'On-site installation service for electronics', 'active'),
+//           ('Maintenance Contract', 'SRV-011', 'Services', 'contract', 'service', 'Annual maintenance contract for office equipment', 'active');
+
+        
 
     // Seed Test tables
 
@@ -42,34 +57,30 @@ async function seedTables() {
       await database.query(`
         INSERT INTO suppliers (supplier_id, name, rating, status, address)
           VALUES
-          (7, 'Blue Nile Agro Supply',    4.0, 'active',   '159 Farming District, Bahir Dar, Ethiopia'),
-          (8, 'EuroSteel Partners',       4.6, 'active',   '753 Steelworks Lane, Hamburg, Germany'),
-          (9, 'Global Paper Corp.',       3.8, 'active',   '852 Forest Drive, Helsinki, Finland'),
-          (10,'Nile Pharma Distributors', 4.3, 'active',   '963 Health Park, Khartoum, Sudan');
+        (15, 'Global Metals Ltd.',       4.7, 'active',   '123 Industrial Zone, Addis Ababa, Ethiopia'),
+        (16, 'East Africa Plastics Co.', 4.2, 'active',   '456 Manufacturing Rd, Nairobi, Kenya'),
+        (17, 'TransNational Textiles',   3.9, 'inactive', '789 Export Ave, Dar es Salaam, Tanzania'),
+        (18, 'Prime Chemicals PLC',      4.5, 'active',   '321 Chemical Park, Cairo, Egypt');
 
         INSERT INTO products (name, sku, category, unit, product_type, description, status)
           VALUES
-          ('Office Chair', 'CHR-006', 'Furniture', 'pcs', 'finished_good', 'Ergonomic office chair with adjustable height', 'active'),
-          ('Dining Table', 'TBL-007', 'Furniture', 'pcs', 'finished_good', '6-seater wooden dining table', 'inactive'),
-
-          ('Printer Ink Cartridge', 'INK-008', 'Consumables', 'pcs', 'consumable', 'Black ink cartridge for office printers', 'active'),
-          ('AA Batteries Pack', 'BAT-009', 'Consumables', 'pack', 'consumable', 'Pack of 4 AA alkaline batteries', 'active'),
-
-          ('Installation Service', 'SRV-010', 'Services', 'job', 'service', 'On-site installation service for electronics', 'active'),
-          ('Maintenance Contract', 'SRV-011', 'Services', 'contract', 'service', 'Annual maintenance contract for office equipment', 'active');
-
-        INSERT INTO purchase_orders (po_id, supplier_id, created_at, total_amount, status) VALUES
-          (1007, 1, '2025-09-09 16:40:00', 2750.00, 'rejected'),
-          (1008, 1, '2025-09-10 08:10:00', 6400.00, 'approved'),
-          (1009, 3, '2025-09-11 10:55:00', 4800.00, 'completed'),
-          (1010, 2, '2025-09-12 13:25:00', 7200.00, 'pending');
-
-        INSERT INTO purchase_order_items (id, po_id, product_id, quantity, unit_price, created_at, updated_at) VALUES
-          (9, 1007, 4, 1, 275.00, '2025-09-09 16:40:00', '2025-09-09 16:40:00'),
-          (10, 1008, 5, 8, 80.00, '2025-09-10 08:10:00', '2025-09-10 08:10:00'),
-          (11, 1009, 6, 6, 800.00, '2025-09-11 10:55:00', '2025-09-11 10:55:00'),
-          (12, 1010, 5, 12, 60.00, '2025-09-12 13:25:00', '2025-09-12 13:25:00');
+        ('Steel Rod', 'STL-506', 'Raw Materials', 'kg', 'raw_material', 'High-quality steel rods for manufacturing', 'active'),
+        ('Copper Wire', 'COP-502', 'Raw Materials', 'm', 'raw_material', 'Copper wiring for electrical components', 'active'),
+        ('Plastic Granules', 'PLS-503', 'Raw Materials', 'kg', 'raw_material', 'Plastic raw material for molding', 'active'),
+        ('LED TV 42-inch', 'TV-504', 'Electronics', 'pcs', 'finished_good', '42-inch LED television with smart features', 'active'),
+        ('Wireless Mouse', 'MOU-505', 'Electronics', 'pcs', 'finished_good', 'Ergonomic wireless mouse with USB receiver', 'active');
         `)
+        // INSERT INTO purchase_orders (po_id, supplier_id, created_at, total_amount, status) VALUES
+        //           (1007, 1, '2025-09-09 16:40:00', 2750.00, 'rejected'),
+        //   (1008, 1, '2025-09-10 08:10:00', 6400.00, 'approved'),
+        //   (1009, 3, '2025-09-11 10:55:00', 4800.00, 'completed'),
+        //   (1010, 2, '2025-09-12 13:25:00', 7200.00, 'pending');
+
+        // INSERT INTO purchase_order_items (id, po_id, product_id, quantity, unit_price, created_at, updated_at) VALUES
+        //   (9, 1007, 4, 1, 275.00, '2025-09-09 16:40:00', '2025-09-09 16:40:00'),
+        //   (10, 1008, 5, 8, 80.00, '2025-09-10 08:10:00', '2025-09-10 08:10:00'),
+        //   (11, 1009, 6, 6, 800.00, '2025-09-11 10:55:00', '2025-09-11 10:55:00'),
+        //   (12, 1010, 5, 12, 60.00, '2025-09-12 13:25:00', '2025-09-12 13:25:00');
     // await database.query(`
 
     //   INSERT INTO dim_warehouses (warehouse_id, name, address, manager_id) VALUES

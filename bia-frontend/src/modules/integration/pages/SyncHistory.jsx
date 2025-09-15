@@ -29,6 +29,7 @@ const SyncHistory = () => {
   const [success, setSuccess] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [selectedLogs, setSelectedLogs] = useState([]);
+  const [logRecords, setLogRecords] = useState({}); // { [logId]: { loading, error, data, page, total, totalPages } }
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -237,6 +238,28 @@ const SyncHistory = () => {
     }
   };
 
+  const loadLogRecords = async (logId, page = 1, limit = 50) => {
+    try {
+      setLogRecords(prev => ({ ...prev, [logId]: { ...(prev[logId] || {}), loading: true, error: null } }));
+      const res = await integrationApi.getLogRecordsByLogId(logId, page, limit);
+      setLogRecords(prev => ({
+        ...prev,
+        [logId]: {
+          loading: false,
+          error: null,
+          data: res.data || [],
+          page: res.pagination?.page || page,
+          total: res.pagination?.total || 0,
+          totalPages: res.pagination?.totalPages || 1,
+          limit: res.pagination?.limit || limit
+        }
+      }));
+    } catch (err) {
+      console.error('Failed to load log records', err);
+      setLogRecords(prev => ({ ...prev, [logId]: { ...(prev[logId] || {}), loading: false, error: 'Failed to load records' } }));
+    }
+  };
+
   const toggleRowExpansion = (logId) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
@@ -244,6 +267,10 @@ const SyncHistory = () => {
         newSet.delete(logId);
       } else {
         newSet.add(logId);
+        // Lazy-load records on first expand
+        if (!logRecords[logId] || !logRecords[logId].data) {
+          loadLogRecords(logId);
+        }
       }
       return newSet;
     });
@@ -805,6 +832,49 @@ const SyncHistory = () => {
                                     {log.message || 'No additional details available'}
                                   </div>
                                 </div>
+                              </div>
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="text-sm font-medium text-gray-900">Records</h4>
+                                  <div className="text-xs text-gray-500">
+                                    {logRecords[log.id]?.total ? `${logRecords[log.id].total} total` : ''}
+                                  </div>
+                                </div>
+                                {logRecords[log.id]?.loading && (
+                                  <div className="text-sm text-gray-500">Loading records...</div>
+                                )}
+                                {logRecords[log.id]?.error && (
+                                  <div className="text-sm text-red-600">{logRecords[log.id].error}</div>
+                                )}
+                                {!logRecords[log.id]?.loading && !logRecords[log.id]?.error && (
+                                  <div className="overflow-x-auto border rounded">
+                                    {Array.isArray(logRecords[log.id]?.data) && logRecords[log.id].data.length > 0 ? (
+                                      <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-100">
+                                          <tr>
+                                            {/* Dynamic keys from first record */}
+                                            {Object.keys(logRecords[log.id].data[0].record || {}).slice(0, 8).map(key => (
+                                              <th key={key} className="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">{key}</th>
+                                            ))}
+                                          </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-100">
+                                          {logRecords[log.id].data.map(r => (
+                                            <tr key={r.id} className="hover:bg-gray-50">
+                                              {Object.keys(logRecords[log.id].data[0].record || {}).slice(0, 8).map(key => (
+                                                <td key={key} className="px-3 py-2 whitespace-nowrap text-xs text-gray-700">
+                                                  {typeof r.record[key] === 'object' ? JSON.stringify(r.record[key]) : String(r.record[key] ?? '')}
+                                                </td>
+                                              ))}
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    ) : (
+                                      <div className="p-3 text-sm text-gray-500">No records to display</div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </td>

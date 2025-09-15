@@ -22,6 +22,7 @@ export const apiPaths = {
         GET_SYNC_LOGS: `${BASE_URL}/api/data-source/sync/logs`,
         GET_SYNC_LOGS_BY_ID: (dataSourceId) => `${BASE_URL}/api/data-source/sync/logs/${dataSourceId}/paginate`,
         GET_SYNC_LOGS_PAGINATED: `${BASE_URL}/api/data-source/sync/logs/paginated`,
+        GET_LOG_RECORDS_BY_LOG_ID: (logId) => `${BASE_URL}/api/data-source/sync/logs/${logId}/records`,
         GET_DATA_SOURCES_NEEDING_SYNC: `${BASE_URL}/api/sync/needing-sync`,
         SYNC_MULTIPLE_DATA_SOURCES: `${BASE_URL}/api/data-source/sync/batch`,
         TEST_MULTIPLE_CONNECTIONS: `${BASE_URL}/api/data-source/test/batch`,
@@ -210,6 +211,16 @@ export const getPaginatedIntegrationLogs = async (page = 1, limit = 10, filters 
         throw error;
     }
 }
+
+export const getLogRecordsByLogId = async (logId, page = 1, limit = 50) => {
+    try {
+        const response = await axios.get(apiPaths.GET_LOG_RECORDS_BY_LOG_ID(logId), { params: { page, limit } });
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching log records for log ${logId}:`, error);
+        throw error;
+    }
+};
 export const getDataSourcesNeedingSync = async () => {
     try {
         const response = await axios.get(apiPaths.GET_DATA_SOURCES_NEEDING_SYNC);

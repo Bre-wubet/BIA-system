@@ -76,6 +76,7 @@ router.get('/sync/queue', mockAuth, dataIntegrationController.getSyncQueue);
 router.get('/sync/logs', mockAuth, dataIntegrationController.getIntegrationLogs);
 router.get('/sync/logs/:dataSourceId/paginate', mockAuth, dataIntegrationController.fetchSyncHistoryByDataSourceId);
 router.get('/sync/logs/paginated', mockAuth, dataIntegrationController.getPaginatedIntegrationLogs);
+router.get('/sync/logs/:logId/records', mockAuth, dataIntegrationController.getLogRecordsByLogId);
 router.get('/sync/needing-sync', mockAuth, dataIntegrationController.getDataSourcesNeedingSync);
 
 // // Batch Operations
