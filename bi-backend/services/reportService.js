@@ -1,4 +1,5 @@
 import Report from '../models/Report.js';
+import database from '../config/db.js';
 import logger from '../config/logger.js';
 import csvExporter from '../utils/exporters/exportToCSV.js';
 import pdfExporter from '../utils/exportToPDF.js';
@@ -97,9 +98,14 @@ export function createReportService() {
 
   // Unified runner
   async function runReport(id, options = {}) {
-    const { format = 'json', filters = {} } = options;
+    const { format = 'json', filters = {}, parameters = {} } = options;
 
     try {
+      // Validate inputs
+      if (!id || isNaN(parseInt(id))) {
+        throw new Error('Valid report ID is required');
+      }
+
       // 1. Fetch report definition
       const report = await Report.findById(id);
       if (!report) {
@@ -107,13 +113,34 @@ export function createReportService() {
         return null;
       }
 
-      // 2. Execute query based on report type
-      const reportData = await executeReportQuery(report, filters);
+      // 2. Validate report configuration
+      if (!report.query_config) {
+        throw new Error('Report query configuration is missing');
+      }
 
-      // 3. Format output
+      // 3. Merge parameters with filters
+      const mergedFilters = { ...filters, ...parameters };
+
+      // 4. Execute query based on report type
+      const reportData = await executeReportQuery(report, mergedFilters);
+
+      // 5. Validate report data
+      if (!reportData || !reportData.data) {
+        throw new Error('Report execution returned no data');
+      }
+
+      // 6. Update last generated timestamp
+      await Report.updateLastGeneratedAt(id);
+
+      // 7. Format output
       return await formatReportOutput(reportData, format, report.name);
     } catch (error) {
-      logger.error(`Error running report [${id}] with format ${options.format}:`, error);
+      logger.error(`Error running report [${id}] with format ${format}:`, {
+        error: error.message,
+        stack: error.stack,
+        reportId: id,
+        options
+      });
       throw error;
     }
   }
@@ -135,20 +162,57 @@ export function createReportService() {
   async function executeReportQuery(report, filters) {
     const { type, query_config } = report;
 
-    switch (type) {
-      case 'sales':
-        return generateSalesReport(query_config, filters);
-      case 'finance':
-        return generateFinanceReport(query_config, filters);
-      case 'hr':
-        return generateHRReport(query_config, filters);
-      case 'operations':
-        return generateOperationsReport(query_config, filters);
-      case 'analytics':
-        return generateAnalyticsReport(query_config, filters);
-      default:
-        logger.info(`Falling back to generic report handler for type: ${type}`);
-        return generateGenericReport(query_config, filters);
+    try {
+      // Ensure database connection and check health
+      await database.connect();
+      const healthCheck = await database.healthCheck();
+      
+      if (healthCheck.status !== 'healthy') {
+        throw new Error('Database connection is not healthy');
+      }
+
+      let result;
+      switch (type) {
+        case 'sales':
+          result = await generateSalesReport(query_config, filters);
+          break;
+        case 'finance':
+          result = await generateFinanceReport(query_config, filters);
+          break;
+        case 'hr':
+          result = await generateHRReport(query_config, filters);
+          break;
+        case 'operations':
+          result = await generateOperationsReport(query_config, filters);
+          break;
+        case 'analytics':
+          result = await generateAnalyticsReport(query_config, filters);
+          break;
+        default:
+          logger.info(`Falling back to generic report handler for type: ${type}`);
+          result = await generateGenericReport(query_config, filters);
+      }
+
+      // Add metadata to result
+      result.metadata = {
+        reportId: report.id,
+        reportName: report.name,
+        reportType: type,
+        executedAt: new Date().toISOString(),
+        recordCount: Array.isArray(result.data) ? result.data.length : 1,
+        executionTime: Date.now() - new Date(result.generatedAt).getTime()
+      };
+
+      return result;
+    } catch (error) {
+      logger.error(`Error executing report query for type ${type}:`, {
+        error: error.message,
+        reportId: report.id,
+        reportType: type,
+        filters,
+        stack: error.stack
+      });
+      throw error;
     }
   }
 
@@ -179,130 +243,341 @@ export function createReportService() {
 
 // Sales Report
 async function generateSalesReport(config, filters) {
-  const { date_range, region } = filters;
+  try {
+    const { date_range, region } = filters;
 
-  let query = `
-    SELECT region,
-           SUM(amount) AS total_sales,
-           COUNT(*) AS total_orders
-    FROM sales
-    WHERE 1=1
-  `;
+    // Use config table if provided, otherwise fallback to default
+    const tableName = config?.table || 'sales';
+    
+    let query = `
+      SELECT region,
+             SUM(amount) AS total_sales,
+             COUNT(*) AS total_orders
+      FROM ${tableName}
+      WHERE 1=1
+    `;
 
-  const values = [];
-  let paramIndex = 1;
+    const values = [];
+    let paramIndex = 1;
 
-  if (date_range?.from && date_range?.to) {
-    query += ` AND created_at BETWEEN $${paramIndex++} AND $${paramIndex++}`;
-    values.push(date_range.from, date_range.to);
+    if (date_range?.from && date_range?.to) {
+      query += ` AND created_at BETWEEN $${paramIndex++} AND $${paramIndex++}`;
+      values.push(date_range.from, date_range.to);
+    }
+
+    if (region?.length) {
+      query += ` AND region = ANY($${paramIndex++})`;
+      values.push(region);
+    }
+
+    query += ` GROUP BY region ORDER BY total_sales DESC`;
+
+    const { rows } = await database.query(query, values);
+
+    return {
+      reportType: 'sales',
+      generatedAt: new Date().toISOString(),
+      data: rows || []
+    };
+  } catch (error) {
+    logger.error('Error generating sales report:', error);
+    throw new Error(`Sales report generation failed: ${error.message}`);
   }
-
-  if (region?.length) {
-    query += ` AND region = ANY($${paramIndex++})`;
-    values.push(region);
-  }
-
-  query += ` GROUP BY region ORDER BY total_sales DESC`;
-
-  const { rows } = await database.query(query, values);
-
-  return {
-    reportType: 'sales',
-    generatedAt: new Date().toISOString(),
-    data: rows
-  };
 }
 
 // Finance Report
 async function generateFinanceReport(config, filters) {
-  const query = `
-    SELECT SUM(revenue) - SUM(expense) AS net_profit,
-           SUM(revenue) AS total_revenue,
-           SUM(expense) AS total_expense
-    FROM finance_transactions
-    WHERE date BETWEEN $1 AND $2
-  `;
-  const { rows } = await database.query(query, [filters.from, filters.to]);
+  try {
+    const tableName = config?.table || 'finance_transactions';
+    
+    const query = `
+      SELECT SUM(revenue) - SUM(expense) AS net_profit,
+             SUM(revenue) AS total_revenue,
+             SUM(expense) AS total_expense
+      FROM ${tableName}
+      WHERE date BETWEEN $1 AND $2
+    `;
+    
+    const { rows } = await database.query(query, [filters.from, filters.to]);
 
-  return {
-    reportType: 'finance',
-    generatedAt: new Date().toISOString(),
-    data: rows[0]
-  };
+    return {
+      reportType: 'finance',
+      generatedAt: new Date().toISOString(),
+      data: rows[0] || {}
+    };
+  } catch (error) {
+    logger.error('Error generating finance report:', error);
+    throw new Error(`Finance report generation failed: ${error.message}`);
+  }
 }
 
 // HR Report
 async function generateHRReport(config, filters) {
-  const { department } = filters;
+  try {
+    const { department } = filters;
+    const tableName = config?.table || 'employees';
 
-  let query = `SELECT department, COUNT(*) AS total_employees FROM employees WHERE status = 'active'`;
-  const values = [];
+    let query = `SELECT department, COUNT(*) AS total_employees FROM ${tableName} WHERE status = 'active'`;
+    const values = [];
 
-  if (department) {
-    query += ` AND department = $1`;
-    values.push(department);
+    if (department) {
+      query += ` AND department = $1`;
+      values.push(department);
+    }
+
+    query += ` GROUP BY department`;
+
+    const { rows } = await database.query(query, values);
+
+    return {
+      reportType: 'hr',
+      generatedAt: new Date().toISOString(),
+      data: rows || []
+    };
+  } catch (error) {
+    logger.error('Error generating HR report:', error);
+    throw new Error(`HR report generation failed: ${error.message}`);
   }
-
-  query += ` GROUP BY department`;
-
-  const { rows } = await database.query(query, values);
-
-  return {
-    reportType: 'hr',
-    generatedAt: new Date().toISOString(),
-    data: rows
-  };
 }
 
 // Operations Report
 async function generateOperationsReport(config, filters) {
-  const query = `
-    SELECT machine_id, AVG(uptime_percent) AS avg_efficiency
-    FROM operations_log
-    WHERE timestamp BETWEEN $1 AND $2
-    GROUP BY machine_id
-  `;
-  const { rows } = await database.query(query, [filters.from, filters.to]);
+  try {
+    const tableName = config?.table || 'operations_log';
+    
+    const query = `
+      SELECT machine_id, AVG(uptime_percent) AS avg_efficiency
+      FROM ${tableName}
+      WHERE timestamp BETWEEN $1 AND $2
+      GROUP BY machine_id
+    `;
+    const { rows } = await database.query(query, [filters.from, filters.to]);
 
-  return {
-    reportType: 'operations',
-    generatedAt: new Date().toISOString(),
-    data: rows
-  };
+    return {
+      reportType: 'operations',
+      generatedAt: new Date().toISOString(),
+      data: rows || []
+    };
+  } catch (error) {
+    logger.error('Error generating operations report:', error);
+    throw new Error(`Operations report generation failed: ${error.message}`);
+  }
 }
 
 // Analytics Report (Cross-module KPIs)
 async function generateAnalyticsReport(config, filters) {
-  // Example: join sales & marketing performance
-  const query = `
-    SELECT c.campaign_name,
-           SUM(s.amount) AS sales_generated,
-           COUNT(s.id) AS orders_count
-    FROM campaigns c
-    LEFT JOIN sales s ON c.id = s.campaign_id
-    WHERE c.start_date >= $1 AND c.end_date <= $2
-    GROUP BY c.campaign_name
-  `;
-  const { rows } = await database.query(query, [filters.from, filters.to]);
+  try {
+    // Use config tables if provided, otherwise fallback to defaults
+    const campaignsTable = config?.campaignsTable || 'campaigns';
+    const salesTable = config?.salesTable || 'sales';
+    
+    const query = `
+      SELECT c.campaign_name,
+             SUM(s.amount) AS sales_generated,
+             COUNT(s.id) AS orders_count
+      FROM ${campaignsTable} c
+      LEFT JOIN ${salesTable} s ON c.id = s.campaign_id
+      WHERE c.start_date >= $1 AND c.end_date <= $2
+      GROUP BY c.campaign_name
+    `;
+    const { rows } = await database.query(query, [filters.from, filters.to]);
 
-  return {
-    reportType: 'analytics',
-    generatedAt: new Date().toISOString(),
-    data: rows
-  };
+    return {
+      reportType: 'analytics',
+      generatedAt: new Date().toISOString(),
+      data: rows || []
+    };
+  } catch (error) {
+    logger.error('Error generating analytics report:', error);
+    throw new Error(`Analytics report generation failed: ${error.message}`);
+  }
 }
 
 // Fallback Generic Report (executes query_config directly)
 async function generateGenericReport(config, filters) {
-  // Assume config already contains raw SQL
-  const { sql, params } = buildSQLFromConfig(config, filters);
-  const { rows } = await database.query(sql, params);
+  try {
+    // Build SQL from configuration
+    const { sql, params } = buildSQLFromConfig(config, filters);
+    
+    // Log the query for debugging (remove in production)
+    logger.debug('Executing generic report query:', { sql, params });
+    
+    const { rows } = await database.query(sql, params);
 
-  return {
-    reportType: 'generic',
-    generatedAt: new Date().toISOString(),
-    data: rows
+    return {
+      reportType: 'generic',
+      generatedAt: new Date().toISOString(),
+      data: rows || []
+    };
+  } catch (error) {
+    logger.error('Error generating generic report:', error);
+    throw new Error(`Generic report generation failed: ${error.message}`);
+  }
+}
+
+// Input validation and sanitization
+function validateAndSanitizeInput(config, filters) {
+  // Validate config
+  if (!config || typeof config !== 'object') {
+    throw new Error('Query configuration must be a valid object');
+  }
+
+  // Sanitize table names (basic SQL injection prevention)
+  const sanitizeTableName = (name) => {
+    if (!name || typeof name !== 'string') return null;
+    // Only allow alphanumeric characters, underscores, and dots
+    return name.replace(/[^a-zA-Z0-9_.]/g, '');
   };
+
+  // Sanitize column names
+  const sanitizeColumnName = (name) => {
+    if (!name || typeof name !== 'string') return null;
+    // Allow alphanumeric, underscores, dots, and basic SQL functions
+    return name.replace(/[^a-zA-Z0-9_.*(),\s]/g, '');
+  };
+
+  return { sanitizeTableName, sanitizeColumnName };
+}
+
+// SQL Builder for dynamic query generation
+function buildSQLFromConfig(config, filters = {}) {
+  if (!config) {
+    throw new Error('Query configuration is required');
+  }
+
+  const { sanitizeTableName, sanitizeColumnName } = validateAndSanitizeInput(config, filters);
+
+  // If config contains raw SQL, validate and use it directly
+  if (config.sql) {
+    // Basic SQL injection prevention for raw SQL
+    const dangerousPatterns = [
+      /drop\s+table/i,
+      /delete\s+from/i,
+      /truncate\s+table/i,
+      /alter\s+table/i,
+      /create\s+table/i,
+      /insert\s+into/i,
+      /update\s+.*\s+set/i
+    ];
+
+    const isDangerous = dangerousPatterns.some(pattern => pattern.test(config.sql));
+    if (isDangerous) {
+      throw new Error('Potentially dangerous SQL operation detected');
+    }
+
+    return {
+      sql: config.sql,
+      params: config.params || []
+    };
+  }
+
+  // Build SQL from structured config
+  const { 
+    table, 
+    columns = ['*'], 
+    joins = [], 
+    where = [], 
+    groupBy = [], 
+    orderBy = [],
+    limit,
+    offset 
+  } = config;
+
+  if (!table) {
+    throw new Error('Table name is required in query configuration');
+  }
+
+  // Sanitize table name
+  const sanitizedTable = sanitizeTableName(table);
+  if (!sanitizedTable) {
+    throw new Error('Invalid table name provided');
+  }
+
+  // Sanitize columns
+  const sanitizedColumns = Array.isArray(columns) 
+    ? columns.map(col => sanitizeColumnName(col)).filter(Boolean)
+    : sanitizeColumnName(columns);
+
+  if (!sanitizedColumns || (Array.isArray(sanitizedColumns) && sanitizedColumns.length === 0)) {
+    throw new Error('Invalid column specification');
+  }
+
+  let sql = `SELECT ${Array.isArray(sanitizedColumns) ? sanitizedColumns.join(', ') : sanitizedColumns} FROM ${sanitizedTable}`;
+  const params = [];
+  let paramIndex = 1;
+
+  // Add JOINs
+  if (joins && joins.length > 0) {
+    joins.forEach(join => {
+      sql += ` ${join.type || 'INNER'} JOIN ${join.table} ON ${join.condition}`;
+    });
+  }
+
+  // Add WHERE clauses
+  if (where && where.length > 0) {
+    sql += ' WHERE ';
+    const whereConditions = where.map(condition => {
+      if (typeof condition === 'string') {
+        return condition;
+      }
+      if (condition.column && condition.operator && condition.value !== undefined) {
+        sql += ` ${condition.column} ${condition.operator} $${paramIndex++}`;
+        params.push(condition.value);
+        return '';
+      }
+      return condition;
+    }).filter(Boolean);
+    sql += whereConditions.join(' AND ');
+  }
+
+  // Add filter conditions
+  if (filters && Object.keys(filters).length > 0) {
+    const filterConditions = [];
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        if (Array.isArray(value)) {
+          filterConditions.push(`${key} = ANY($${paramIndex++})`);
+          params.push(value);
+        } else if (typeof value === 'object' && value.from && value.to) {
+          filterConditions.push(`${key} BETWEEN $${paramIndex++} AND $${paramIndex++}`);
+          params.push(value.from, value.to);
+        } else {
+          filterConditions.push(`${key} = $${paramIndex++}`);
+          params.push(value);
+        }
+      }
+    });
+
+    if (filterConditions.length > 0) {
+      sql += (where && where.length > 0) ? ' AND ' : ' WHERE ';
+      sql += filterConditions.join(' AND ');
+    }
+  }
+
+  // Add GROUP BY
+  if (groupBy && groupBy.length > 0) {
+    sql += ` GROUP BY ${groupBy.join(', ')}`;
+  }
+
+  // Add ORDER BY
+  if (orderBy && orderBy.length > 0) {
+    sql += ` ORDER BY ${orderBy.join(', ')}`;
+  }
+
+  // Add LIMIT
+  if (limit) {
+    sql += ` LIMIT $${paramIndex++}`;
+    params.push(parseInt(limit));
+  }
+
+  // Add OFFSET
+  if (offset) {
+    sql += ` OFFSET $${paramIndex++}`;
+    params.push(parseInt(offset));
+  }
+
+  return { sql, params };
 }
 
   // ---------------- Scheduling ----------------
@@ -414,9 +689,6 @@ async function generateGenericReport(config, filters) {
     }
   }
 
-  async function runReport(id, options = {}) {
-    return executeReport(id, options);
-  }
 
   async function exportReport(id, format) {
     try {
@@ -494,10 +766,25 @@ async function generateGenericReport(config, filters) {
     if (isProcessing || reportQueue.length === 0) return;
 
     isProcessing = true;
+    const startTime = Date.now();
+    const maxProcessingTime = 300000; // 5 minutes timeout
+
     try {
       while (reportQueue.length > 0) {
+        // Check for timeout
+        if (Date.now() - startTime > maxProcessingTime) {
+          logger.warn('Report queue processing timeout reached');
+          break;
+        }
+
         const task = reportQueue.shift();
-        await executeReport(task.id, task.options);
+        try {
+          await executeReport(task.id, task.options);
+          logger.info(`Successfully processed report ${task.id} from queue`);
+        } catch (error) {
+          logger.error(`Failed to process report ${task.id} from queue:`, error);
+          // Continue processing other reports in queue
+        }
       }
     } catch (error) {
       logger.error('Error processing report queue:', error);
@@ -507,8 +794,21 @@ async function generateGenericReport(config, filters) {
   }
 
   function addToQueue(reportId, options = {}) {
-    reportQueue.push({ id: reportId, options });
-    processReportQueue();
+    // Add timeout to prevent queue from growing indefinitely
+    const maxQueueSize = 100;
+    if (reportQueue.length >= maxQueueSize) {
+      logger.warn('Report queue is full, dropping oldest task');
+      reportQueue.shift();
+    }
+
+    reportQueue.push({ 
+      id: reportId, 
+      options,
+      addedAt: new Date().toISOString()
+    });
+    
+    // Process queue asynchronously
+    setImmediate(() => processReportQueue());
   }
 
   // ---------------- Public API ----------------

@@ -100,9 +100,6 @@ export async function deleteDashboard(id) {
       return { success: false, message: 'Dashboard not found' };
     }
 
-    // Deactivate all widgets first
-    await DashboardWidget.deactivateWidgetsByDashboard(id);
-    
     // Delete the dashboard
     const deletedDashboard = await Dashboard.remove(id);
     logger.info(`Dashboard deleted: ${id}`);

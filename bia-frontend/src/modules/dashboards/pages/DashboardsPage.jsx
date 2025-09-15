@@ -95,19 +95,6 @@ const DashboardsPage = () => {
     }
   };
 
-  // useEffect(() => {
-  //   const fetchWidgets = async () => {
-  //     try {
-  //       const res = await getAllWidgets();
-  //       setWidgets(res.data || []);
-  //     } catch (error) {
-  //       console.error('Error fetching widgets:', error);
-  //     }
-  //   };
-
-  //   fetchWidgets();
-  // }, []);
-
   const fetchDashboardStats = async () => {
     try {
       const data = await getDashboardStats();
@@ -531,9 +518,9 @@ const DashboardsPage = () => {
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-blue-600">
-                        {dashboard.widget_count || 0}
+                        {dashboard.kpi?.length || 0}
                       </div>
-                      <div className="text-xs text-gray-600">Widgets</div>
+                      <div className="text-xs text-gray-600">KPIs</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-green-600">
