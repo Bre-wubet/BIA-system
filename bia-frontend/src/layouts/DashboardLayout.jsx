@@ -363,7 +363,7 @@ const DashboardLayout = () => {
           </nav>
 
           {/* Quick Actions */}
-          <div className="mt-6 px-3 mb-6">
+          {/* <div className="mt-6 px-3 mb-6">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
               <h3 className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <MdTrendingUp className="w-4 h-4" />
@@ -395,7 +395,7 @@ const DashboardLayout = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </aside>
 
