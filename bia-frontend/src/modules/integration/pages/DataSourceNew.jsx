@@ -830,7 +830,7 @@ ORDER BY i.current_stock ASC;`
   }
 
   return (
-    <div className="">
+    <div>
       <div className="max-w-4xl px-4">
         {/* Header */}
         <div className="mb-8">
@@ -913,7 +913,7 @@ ORDER BY i.current_stock ASC;`
 
         {/* Form Content */}
         <Card>
-          <div className="p-8">
+          <div>
             {/* Step 1: Basic Information */}
             {currentStep === 1 && (
               <div className="space-y-6">
@@ -1038,12 +1038,12 @@ ORDER BY i.current_stock ASC;`
                         <MdStorage className="w-5 h-5 text-blue-600" />
                         Module Configuration
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 gap-6">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Business Module *
                           </label>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
                             {[
                               { value: 'hr', label: 'Human Resources', icon: '👥', description: 'Employee data and HR processes' },
                               { value: 'crm', label: 'CRM', icon: '🤝', description: 'Customer relationship management' },
@@ -1080,9 +1080,9 @@ ORDER BY i.current_stock ASC;`
                           {validationErrors.module_name && (
                             <p className="mt-1 text-sm text-red-600">{validationErrors.module_name}</p>
                           )}
-                        </div>
-
-                        <div>
+                        </div>                       
+                      </div>
+                      <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Data Table *
                           </label>
@@ -1091,7 +1091,6 @@ ORDER BY i.current_stock ASC;`
                             <p className="mt-1 text-sm text-red-600">{validationErrors.fact_tables}</p>
                           )}
                         </div>
-                      </div>
                     </div>
                   </Card>
                 )}
