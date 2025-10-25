@@ -38,6 +38,14 @@ const DashboardLayout = () => {
   const userMenuRef = useRef(null);
   const notificationsRef = useRef(null);
 
+  // Utility function to format role for display
+  const formatRole = (role) => {
+    if (typeof role === 'string') {
+      return role.replace('_', ' ');
+    }
+    return 'User';
+  };
+
   const userPermissions = ROLE_PERMISSIONS[user?.role] || {};
   const filteredNavigationItems = NAVIGATION_ITEMS.filter(item => 
     item.roles.includes(user?.role)
@@ -183,7 +191,7 @@ const DashboardLayout = () => {
                   }
                 </p>
                 <p className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block ${roleBadgeColors[user?.role] || 'bg-gray-100 text-gray-700'}`}>
-                  {user?.role?.replace('_', ' ') || 'User'}
+                  {formatRole(user?.role)}
                 </p>
               </div>
             </div>
@@ -509,7 +517,7 @@ const DashboardLayout = () => {
                               : user?.username || 'User'
                             }
                           </p>
-                          <p className="text-xs text-gray-500">{user?.role || 'User'}</p>
+                          <p className="text-xs text-gray-500">{formatRole(user?.role)}</p>
                         </div>
                       </div>
                     </div>

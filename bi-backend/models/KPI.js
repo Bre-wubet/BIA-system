@@ -146,6 +146,45 @@ async function getKPIsNeedingUpdate() {
   return result.rows[0];
 }
 
+// Get KPI values for analytics
+async function getKPIValuesForAnalytics() {
+  const query = `
+    SELECT kv.kpi_id, kv.value, kv.calculated_at as timestamp
+    FROM kpi_values kv
+    INNER JOIN ${tableName} k ON kv.kpi_id = k.id
+    WHERE k.is_active = true
+    AND kv.calculated_at >= NOW() - INTERVAL '30 days'
+    ORDER BY kv.kpi_id, kv.calculated_at DESC
+  `;
+  return database.query(query);
+}
+
+// Get KPI values for predictions
+async function getKPIValuesForPredictions() {
+  const query = `
+    SELECT kv.kpi_id, kv.value, kv.calculated_at as timestamp
+    FROM kpi_values kv
+    INNER JOIN ${tableName} k ON kv.kpi_id = k.id
+    WHERE k.is_active = true
+    AND kv.calculated_at >= NOW() - INTERVAL '90 days'
+    ORDER BY kv.kpi_id, kv.calculated_at DESC
+  `;
+  return database.query(query);
+}
+
+// Get KPI values for alerts
+async function getKPIValuesForAlerts() {
+  const query = `
+    SELECT kv.kpi_id, kv.value, kv.calculated_at as timestamp
+    FROM kpi_values kv
+    INNER JOIN ${tableName} k ON kv.kpi_id = k.id
+    WHERE k.is_active = true
+    AND kv.calculated_at >= NOW() - INTERVAL '7 days'
+    ORDER BY kv.kpi_id, kv.calculated_at DESC
+  `;
+  return database.query(query);
+}
+
 export default {
   createKpiTable,
   createKpi,
@@ -157,5 +196,8 @@ export default {
   getKPIsByCategory,
   getCategories,
   findByDashboardId,
-  getKPIsNeedingUpdate
+  getKPIsNeedingUpdate,
+  getKPIValuesForAnalytics,
+  getKPIValuesForPredictions,
+  getKPIValuesForAlerts
 }

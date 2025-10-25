@@ -24,7 +24,7 @@ const LoginPage = () => {
   useEffect(() => {
     // Clear any existing errors when component mounts
     clearError();
-  }, [clearError]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (e) => {
     const { name, value } = e.target;

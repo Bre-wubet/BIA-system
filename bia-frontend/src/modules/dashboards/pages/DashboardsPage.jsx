@@ -312,7 +312,7 @@ const DashboardsPage = () => {
               <MdViewModule className="w-4 h-4 mr-2" />
               Create from Template
             </Button>
-            <Button onClick={() => navigate(`/dashboards/new`)} variant="success">
+            <Button onClick={() => navigate(`/dashboard/dashboard/dashboards/new`)} variant="success">
               New Dashboard
             </Button>
           </div>
@@ -537,7 +537,7 @@ const DashboardsPage = () => {
                     {ROLE_PERMISSIONS[userRole].canEdit && (
                       <Tooltip content="Edit Dashboard">
                         <Button
-                          onClick={() => navigate(`/dashboards/${dashboard.id}/edit`)}
+                          onClick={() => navigate(`/dashboard/dashboard/dashboards/${dashboard.id}/edit`)}
                           variant="outline"
                           size="sm"
                         >
@@ -572,7 +572,7 @@ const DashboardsPage = () => {
                   <Button 
                     variant="primary" 
                     size="sm" 
-                    onClick={() => navigate(`/dashboards/${dashboard.id}`)}
+                    onClick={() => navigate(`/dashboard/dashboards/${dashboard.id}`)}
                   >
                     View
                   </Button>
@@ -624,7 +624,7 @@ const DashboardsPage = () => {
                   <div className="flex items-center gap-2">
                     {ROLE_PERMISSIONS[userRole].canEdit && (
                       <Button
-                        onClick={() => navigate(`/dashboards/${dashboard.id}/edit`)}
+                        onClick={() => navigate(`/dashboard/dashboards/${dashboard.id}/edit`)}
                         variant="outline"
                         size="sm"
                       >
@@ -646,7 +646,7 @@ const DashboardsPage = () => {
                     <Button 
                       variant="primary" 
                       size="sm" 
-                      onClick={() => navigate(`/dashboards/${dashboard.id}`)}
+                      onClick={() => navigate(`/dashboard/dashboards/${dashboard.id}`)}
                     >
                       View
                     </Button>
@@ -785,14 +785,14 @@ const DashboardsPage = () => {
                 <div className="flex">
                   <input
                     type="text"
-                    value={`${window.location.origin}/dashboards/${selectedDashboard.id}`}
+                    value={`${window.location.origin}/dashboard/dashboards/${selectedDashboard.id}`}
                     readOnly
                     className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm"
                   />
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/dashboards/${selectedDashboard.id}`)}
+                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/dashboard/dashboards/${selectedDashboard.id}`)}
                     className="rounded-l-none"
                   >
                     Copy

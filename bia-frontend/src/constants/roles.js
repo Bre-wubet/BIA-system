@@ -84,22 +84,22 @@ export const ROLE_PERMISSIONS = {
 export const ROLE_DASHBOARDS = {
   [ROLES.ADMIN]: [
     { key: 'overview', path: '/overview', title: 'System Overview' },
-    { key: 'sales', path: '/dashboards/sales', title: 'Sales Dashboard' },
-    { key: 'hr', path: '/dashboards/hr', title: 'HR Dashboard' },
-    { key: 'finance', path: '/dashboards/finance', title: 'Finance Dashboard' },
-    { key: 'operations', path: '/dashboards/operations', title: 'Operations Dashboard' },
-    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' }
+    { key: 'sales', path: '/dashboard/dashboard/dashboards/sales', title: 'Sales Dashboard' },
+    { key: 'hr', path: '/dashboard/dashboard/dashboards/hr', title: 'HR Dashboard' },
+    { key: 'finance', path: '/dashboard/dashboard/dashboards/finance', title: 'Finance Dashboard' },
+    { key: 'operations', path: '/dashboard/dashboard/dashboards/operations', title: 'Operations Dashboard' },
+    { key: 'analytics', path: '/dashboard/dashboard/dashboards/analytics', title: 'Analytics Dashboard' }
   ],
   [ROLES.MANAGER]: [
     { key: 'overview', path: '/overview', title: 'Overview' },
-    { key: 'sales', path: '/dashboards/sales', title: 'Sales Dashboard' },
-    { key: 'hr', path: '/dashboards/hr', title: 'HR Dashboard' },
-    { key: 'finance', path: '/dashboards/finance', title: 'Finance Dashboard' },
-    { key: 'operations', path: '/dashboards/operations', title: 'Operations Dashboard' }
+    { key: 'sales', path: '/dashboard/dashboards/sales', title: 'Sales Dashboard' },
+    { key: 'hr', path: '/dashboard/dashboards/hr', title: 'HR Dashboard' },
+    { key: 'finance', path: '/dashboard/dashboards/finance', title: 'Finance Dashboard' },
+    { key: 'operations', path: '/dashboard/dashboards/operations', title: 'Operations Dashboard' }
   ],
   [ROLES.ANALYST]: [
     { key: 'overview', path: '/overview', title: 'Overview' },
-    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' },
+    { key: 'analytics', path: '/dashboard/dashboards/analytics', title: 'Analytics Dashboard' },
     { key: 'reports', path: '/reports', title: 'Reports' }
   ],
   [ROLES.VIEWER]: [
@@ -108,17 +108,17 @@ export const ROLE_DASHBOARDS = {
   ],
   [ROLES.SALES]: [
     { key: 'overview', path: '/overview', title: 'Overview' },
-    { key: 'sales', path: '/dashboards/sales', title: 'Sales Dashboard' },
-    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' }
+    { key: 'sales', path: '/dashboard/dashboards/sales', title: 'Sales Dashboard' },
+    { key: 'analytics', path: '/dashboard/dashboards/analytics', title: 'Analytics Dashboard' }
   ],
   [ROLES.HR]: [
     { key: 'overview', path: '/overview', title: 'Overview' },
-    { key: 'hr', path: '/dashboards/hr', title: 'HR Dashboard' },
-    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' }
+    { key: 'hr', path: '/dashboard/dashboards/hr', title: 'HR Dashboard' },
+    { key: 'analytics', path: '/dashboard/dashboards/analytics', title: 'Analytics Dashboard' }
   ],
   [ROLES.FINANCE]: [
     { key: 'overview', path: '/overview', title: 'Overview' },
-    { key: 'finance', path: '/dashboards/finance', title: 'Finance Dashboard' },
-    { key: 'analytics', path: '/dashboards/analytics', title: 'Analytics Dashboard' }
+    { key: 'finance', path: '/dashboard/dashboards/finance', title: 'Finance Dashboard' },
+    { key: 'analytics', path: '/dashboard/dashboards/analytics', title: 'Analytics Dashboard' }
   ]
 };

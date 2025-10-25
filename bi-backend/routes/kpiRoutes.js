@@ -25,6 +25,11 @@ router.get('/categories', kpiController.getKPICategories);
 router.get('/needing-update', kpiController.getKPIsNeedingUpdate);
 router.get('/stats', kpiController.getKPIStats);
 
+// Analytics and predictions (must be before /:id route to avoid conflicts)
+router.get('/analytics', kpiController.getKPIAnalytics);
+router.get('/predictions', kpiController.getKPIPredictions);
+router.get('/alerts', kpiController.getKPIAlerts);
+
 router.get('/:id', kpiController.getKPIById);
 router.put('/:id', validateRequest({
   name: { type: 'string', required: false, minLength: 1, maxLength: 255 },

@@ -220,3 +220,45 @@ export const getKPIStats = asyncHandler(async (req, res) => {
     });
   }
 });
+
+// Get KPI Analytics
+export const getKPIAnalytics = asyncHandler(async (req, res) => {
+  try {
+    const result = await kpiService.getKPIAnalytics();
+    res.json(result);
+  } catch (error) {
+    logger.error('Error getting KPI analytics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get KPI analytics'
+    });
+  }
+});
+
+// Get KPI Predictions
+export const getKPIPredictions = asyncHandler(async (req, res) => {
+  try {
+    const result = await kpiService.getKPIPredictions();
+    res.json(result);
+  } catch (error) {
+    logger.error('Error getting KPI predictions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get KPI predictions'
+    });
+  }
+});
+
+// Get KPI Alerts
+export const getKPIAlerts = asyncHandler(async (req, res) => {
+  try {
+    const result = await kpiService.getKPIAlerts();
+    res.json(result);
+  } catch (error) {
+    logger.error('Error getting KPI alerts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get KPI alerts'
+    });
+  }
+});

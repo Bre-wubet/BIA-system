@@ -190,7 +190,7 @@ const DashboardDetail = () => {
   const handleDuplicate = async () => {
     try {
       const copy = await duplicateDashboard(id, `${dashboard.name} Copy`);
-      navigate(`/dashboards/${copy.id}`);
+      navigate(`/dashboard/dashboards/${copy.id}`);
     } catch (err) {
       setError(err.message || "Duplicate failed");
     }
@@ -388,7 +388,7 @@ const DashboardDetail = () => {
               </Button>
             </Tooltip>
             {ROLE_PERMISSIONS[userRole].canEdit && (
-              <Button onClick={() => navigate(`/dashboards/${id}/edit`)} variant="primary" size="sm">
+              <Button onClick={() => navigate(`/dashboard/dashboards/${id}/edit`)} variant="primary" size="sm">
                 <MdEdit className="w-4 h-4 mr-1" />
                 Edit
               </Button>

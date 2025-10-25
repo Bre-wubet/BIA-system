@@ -129,3 +129,186 @@ export async function getKPIsNeedingUpdate() {
     throw error;
   }
 }
+
+// Get KPI Analytics
+export async function getKPIAnalytics() {
+  try {
+    const kpis = await KPI.getAllKPIs();
+    const kpiValues = await KPI.getKPIValuesForAnalytics();
+    
+    // Calculate analytics metrics
+    const analytics = {
+      total_kpis: kpis.rows.length,
+      active_kpis: kpis.rows.filter(kpi => kpi.is_active === true).length,
+      categories: kpis.rows.reduce((acc, kpi) => {
+        acc[kpi.category] = (acc[kpi.category] || 0) + 1;
+        return acc;
+      }, {}),
+      performance_trends: {
+        improving: 0,
+        stable: 0,
+        declining: 0
+      },
+      average_values: {},
+      last_updated: new Date().toISOString()
+    };
+
+    // Calculate performance trends based on recent values
+    if (kpiValues.rows && kpiValues.rows.length > 0) {
+      const trendData = kpiValues.rows.reduce((acc, row) => {
+        if (!acc[row.kpi_id]) {
+          acc[row.kpi_id] = [];
+        }
+        acc[row.kpi_id].push({
+          value: parseFloat(row.value),
+          timestamp: row.timestamp
+        });
+        return acc;
+      }, {});
+
+      Object.keys(trendData).forEach(kpiId => {
+        const values = trendData[kpiId].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        if (values.length >= 2) {
+          const recent = values.slice(-2);
+          const trend = recent[1].value - recent[0].value;
+          if (trend > 0) analytics.performance_trends.improving++;
+          else if (trend < 0) analytics.performance_trends.declining++;
+          else analytics.performance_trends.stable++;
+        }
+      });
+    }
+
+    logger.info('KPI analytics generated successfully');
+    return { success: true, data: analytics };
+  } catch (error) {
+    logger.error('Error getting KPI analytics:', error);
+    throw error;
+  }
+}
+
+// Get KPI Predictions
+export async function getKPIPredictions() {
+  try {
+    const kpis = await KPI.getAllKPIs();
+    const kpiValues = await KPI.getKPIValuesForPredictions();
+    
+    const predictions = {
+      total_predictions: kpis.rows.length,
+      predictions: [],
+      last_updated: new Date().toISOString()
+    };
+
+    // Generate predictions for each KPI
+    for (const kpi of kpis.rows) {
+      const kpiData = kpiValues.rows ? kpiValues.rows.filter(row => row.kpi_id === kpi.id) : [];
+      
+      if (kpiData.length >= 3) {
+        // Simple linear regression for prediction
+        const values = kpiData.map(row => parseFloat(row.value));
+        const recentValues = values.slice(-5); // Use last 5 values
+        
+        // Calculate trend
+        const trend = recentValues.length > 1 ? 
+          (recentValues[recentValues.length - 1] - recentValues[0]) / recentValues.length : 0;
+        
+        const currentValue = recentValues[recentValues.length - 1];
+        const predictedValue = currentValue + (trend * 7); // Predict 7 days ahead
+        
+        predictions.predictions.push({
+          kpi_id: kpi.id,
+          kpi_name: kpi.name,
+          category: kpi.category,
+          current_value: currentValue,
+          predicted_value: Math.max(0, predictedValue), // Ensure non-negative
+          confidence: Math.min(0.95, Math.max(0.6, 1 - Math.abs(trend) / Math.max(currentValue, 1))), // Confidence based on trend stability
+          prediction_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          trend: trend > 0 ? 'increasing' : trend < 0 ? 'decreasing' : 'stable',
+          last_updated: new Date().toISOString()
+        });
+      }
+    }
+
+    logger.info(`Generated ${predictions.predictions.length} KPI predictions`);
+    return { success: true, data: predictions };
+  } catch (error) {
+    logger.error('Error getting KPI predictions:', error);
+    throw error;
+  }
+}
+
+// Get KPI Alerts
+export async function getKPIAlerts() {
+  try {
+    const kpis = await KPI.getAllKPIs();
+    const kpiValues = await KPI.getKPIValuesForAlerts();
+    
+    const alerts = {
+      total_alerts: 0,
+      alerts: [],
+      last_updated: new Date().toISOString()
+    };
+
+    // Generate alerts based on thresholds and targets
+    for (const kpi of kpis.rows) {
+      const kpiData = kpiValues.rows ? kpiValues.rows.filter(row => row.kpi_id === kpi.id) : [];
+      
+      if (kpiData.length > 0) {
+        const latestValue = parseFloat(kpiData[kpiData.length - 1].value);
+        const targetValue = parseFloat(kpi.target_value) || 0;
+        
+        // Check for threshold alerts
+        if (targetValue > 0) {
+          const deviation = Math.abs(latestValue - targetValue) / targetValue;
+          
+          if (deviation > 0.2) { // 20% deviation threshold
+            alerts.alerts.push({
+              id: `alert_${kpi.id}_${Date.now()}`,
+              kpi_id: kpi.id,
+              kpi_name: kpi.name,
+              category: kpi.category,
+              alert_type: latestValue > targetValue ? 'threshold_exceeded' : 'target_missed',
+              severity: deviation > 0.5 ? 'high' : 'medium',
+              current_value: latestValue,
+              target_value: targetValue,
+              deviation_percentage: Math.round(deviation * 100),
+              message: `KPI ${kpi.name} is ${deviation > 0.5 ? 'significantly' : 'moderately'} ${latestValue > targetValue ? 'above' : 'below'} target`,
+              created_at: new Date().toISOString(),
+              status: 'active'
+            });
+          }
+        }
+        
+        // Check for trend alerts (if we have enough data)
+        if (kpiData.length >= 3) {
+          const recentValues = kpiData.slice(-3).map(row => parseFloat(row.value));
+          const trend = recentValues[2] - recentValues[0];
+          const avgValue = recentValues.reduce((a, b) => a + b, 0) / recentValues.length;
+          
+          if (Math.abs(trend) > avgValue * 0.3) { // 30% change threshold
+            alerts.alerts.push({
+              id: `trend_alert_${kpi.id}_${Date.now()}`,
+              kpi_id: kpi.id,
+              kpi_name: kpi.name,
+              category: kpi.category,
+              alert_type: 'trend_alert',
+              severity: Math.abs(trend) > avgValue * 0.5 ? 'high' : 'medium',
+              current_value: latestValue,
+              trend_value: trend,
+              trend_percentage: Math.round((trend / avgValue) * 100),
+              message: `KPI ${kpi.name} shows ${trend > 0 ? 'increasing' : 'decreasing'} trend of ${Math.round((trend / avgValue) * 100)}%`,
+              created_at: new Date().toISOString(),
+              status: 'active'
+            });
+          }
+        }
+      }
+    }
+
+    alerts.total_alerts = alerts.alerts.length;
+    logger.info(`Generated ${alerts.total_alerts} KPI alerts`);
+    return { success: true, data: alerts };
+  } catch (error) {
+    logger.error('Error getting KPI alerts:', error);
+    throw error;
+  }
+}
