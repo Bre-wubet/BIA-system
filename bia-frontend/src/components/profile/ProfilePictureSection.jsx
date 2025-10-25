@@ -17,7 +17,7 @@ const ProfilePictureSection = ({
           <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
             {imagePreview || profile.avatar ? (
               <img 
-                src={imagePreview || profile.avatar} 
+                src={imagePreview || (profile.avatar.startsWith('http') ? profile.avatar : `http://localhost:3000${profile.avatar}`)} 
                 alt="Profile" 
                 className="w-full h-full object-cover"
               />

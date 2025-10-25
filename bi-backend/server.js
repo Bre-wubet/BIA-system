@@ -86,6 +86,9 @@ async function createServer() {
     next();
   });
 
+  // Serve static files (uploaded images)
+  app.use('/uploads', express.static('uploads'));
+
   // Health Check
   app.get('/health', async (req, res) => {
     try {

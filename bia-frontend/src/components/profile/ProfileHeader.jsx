@@ -38,7 +38,7 @@ const ProfileHeader = ({
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
               {imagePreview || profile.avatar ? (
                 <img 
-                  src={imagePreview || profile.avatar} 
+                  src={imagePreview || (profile.avatar.startsWith('http') ? profile.avatar : `http://localhost:3000${profile.avatar}`)} 
                   alt="Profile" 
                   className="w-full h-full object-cover"
                 />
