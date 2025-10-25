@@ -133,6 +133,32 @@ export const updateProfile = async (req, res) => {
 };
 
 /**
+ * Upload user avatar
+ */
+export const uploadAvatar = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+    
+    const result = await authService.uploadAvatar(userId, req.file);
+    
+    res.json(result);
+  } catch (error) {
+    logger.error('Upload avatar controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Avatar upload failed'
+    });
+  }
+};
+
+/**
  * Change user password
  */
 export const changePassword = async (req, res) => {

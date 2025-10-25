@@ -1,10 +1,36 @@
 import express from 'express';
+import multer from 'multer';
 import * as authController from '../controllers/authController.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { requireRole } from '../middlewares/roleMiddleware.js';
 import { validateRequest } from '../middlewares/validateRequest.js';
 
 const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/avatars/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `avatar-${uniqueSuffix}.${file.originalname.split('.').pop()}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 // ----------------- Public Routes -----------------
 
@@ -119,6 +145,18 @@ router.put(
     department: { type: 'string', required: false, maxLength: 100 }
   }),
   authController.updateProfile
+);
+
+/**
+ * @route POST /api/auth/upload-avatar
+ * @desc Upload user avatar
+ * @access Private
+ */
+router.post(
+  '/upload-avatar',
+  authMiddleware,
+  upload.single('avatar'),
+  authController.uploadAvatar
 );
 
 /**

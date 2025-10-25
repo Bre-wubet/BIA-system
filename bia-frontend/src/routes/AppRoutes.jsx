@@ -46,6 +46,10 @@ import ExportTemplatesPage from '../modules/export/pages/ExportTemplatesPage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 
+// Settings and Profile Pages
+import SettingsPage from '../pages/SettingsPage';
+import ProfilePage from '../pages/ProfilePage';
+
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -210,6 +214,12 @@ const AppRoutes = () => {
         <Route path="exports/:id/edit" element={<ExportDetailPage />} />
         <Route path="exports/history" element={<ExportHistoryPage />} />
         <Route path="exports/templates" element={<ExportTemplatesPage />} />
+
+        {/* Settings - accessible to all authenticated users */}
+        <Route path="settings" element={<SettingsPage />} />
+
+        {/* Profile - accessible to all authenticated users */}
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
     </Routes>
   );

@@ -91,12 +91,12 @@ const DashboardLayout = () => {
   };
 
   const handleSettings = () => {
-    navigate('/settings');
+    navigate('/dashboard/settings');
     setUserMenuOpen(false);
   };
 
   const handleProfile = () => {
-    navigate('/profile');
+    navigate('/dashboard/profile');
     setUserMenuOpen(false);
   };
 

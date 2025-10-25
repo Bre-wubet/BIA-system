@@ -148,7 +148,7 @@ import {
         inactive,
         error,
         pending,
-        successRate: total > 0 ? ((active / total) * 100).toFixed(1) : 0,
+        successRate: total > 0 && !isNaN(active) && !isNaN(total) ? ((active / total) * 100).toFixed(1) : 0,
         lastSync: dataSources.reduce((latest, ds) => {
           if (!ds.last_sync) return latest;
           const syncDate = new Date(ds.last_sync);
@@ -461,22 +461,22 @@ import {
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-gray-900">Data Integration</h1>
               <Badge variant="blue" icon={<MdCloudSync className="w-3 h-3" />}>
-                {analytics.successRate}% Success Rate
+                {analytics.successRate || 0}% Success Rate
               </Badge>
             </div>
             <p className="text-gray-600 mb-3">Manage and monitor your data sources and integrations</p>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span className="flex items-center gap-1">
                 <MdStorage className="text-blue-500" />
-                {analytics.total} Total Sources
+                {analytics.total || 0} Total Sources
               </span>
               <span className="flex items-center gap-1">
                 <MdCheckCircle className="text-green-500" />
-                {analytics.active} Active
+                {analytics.active || 0} Active
               </span>
               <span className="flex items-center gap-1">
                 <MdSyncProblem className="text-orange-500" />
-                {analytics.error} Errors
+                {analytics.error || 0} Errors
               </span>
               <span className="flex items-center gap-1">
                 <MdSchedule className="text-purple-500" />
@@ -496,7 +496,7 @@ import {
               </Button>
             </Tooltip>
             <Button
-              onClick={() => navigate("/dashboard/dashboard/integration/data-sync")}
+              onClick={() => navigate("/dashboard/integration/data-sync")}
               variant="outline"
               size="sm"
             >
@@ -547,7 +547,7 @@ import {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Sources</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.total}</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics.total || 0}</p>
                 <p className="text-xs text-gray-500">All data sources</p>
               </div>
             </div>
@@ -562,7 +562,7 @@ import {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Active Sources</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.active}</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics.active || 0}</p>
                 <p className="text-xs text-gray-500">Running smoothly</p>
               </div>
             </div>
@@ -577,7 +577,7 @@ import {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Need Attention</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.error + analytics.pending}</p>
+                <p className="text-2xl font-bold text-gray-900">{(analytics.error || 0) + (analytics.pending || 0)}</p>
                 <p className="text-xs text-gray-500">Errors + Pending</p>
               </div>
             </div>
@@ -958,7 +958,7 @@ import {
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="text-center">
                         <div className="text-lg font-bold text-gray-900">
-                          {ds.sync_frequency ? Math.floor(ds.sync_frequency / 3600) : 'N/A'}
+                          {ds.sync_frequency && !isNaN(ds.sync_frequency) ? Math.floor(ds.sync_frequency / 3600) : 'N/A'}
                         </div>
                         <div className="text-xs text-gray-500">Hours between syncs</div>
                       </div>

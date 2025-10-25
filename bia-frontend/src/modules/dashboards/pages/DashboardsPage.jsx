@@ -312,7 +312,7 @@ const DashboardsPage = () => {
               <MdViewModule className="w-4 h-4 mr-2" />
               Create from Template
             </Button>
-            <Button onClick={() => navigate(`/dashboard/dashboard/dashboards/new`)} variant="success">
+            <Button onClick={() => navigate(`/dashboard/dashboards/new`)} variant="success">
               New Dashboard
             </Button>
           </div>
@@ -537,7 +537,7 @@ const DashboardsPage = () => {
                     {ROLE_PERMISSIONS[userRole].canEdit && (
                       <Tooltip content="Edit Dashboard">
                         <Button
-                          onClick={() => navigate(`/dashboard/dashboard/dashboards/${dashboard.id}/edit`)}
+                          onClick={() => navigate(`/dashboard/dashboards/${dashboard.id}/edit`)}
                           variant="outline"
                           size="sm"
                         >

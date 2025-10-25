@@ -298,7 +298,7 @@ class AuthService {
    */
   async updateUserProfile(userId, updateData) {
     try {
-      const allowedFields = ['first_name', 'last_name', 'department', 'email'];
+      const allowedFields = ['first_name', 'last_name', 'department', 'email', 'avatar'];
       const filteredData = {};
 
       // Only allow certain fields to be updated
@@ -316,7 +316,7 @@ class AuthService {
         }
       }
 
-      filteredData.updated_at = new Date();
+      // updated_at is automatically handled by User.update()
 
       const updatedUser = await User.update(userId, filteredData);
 
@@ -368,6 +368,34 @@ class AuthService {
       refreshToken,
       expiresIn: this.jwtExpiresIn
     };
+  }
+
+  /**
+   * Upload user avatar
+   */
+  async uploadAvatar(userId, file) {
+    try {
+      // In a real application, you would upload to cloud storage (AWS S3, Cloudinary, etc.)
+      // For now, we'll simulate storing the file and return a URL
+      const fileName = `avatar_${userId}_${Date.now()}.${file.originalname.split('.').pop()}`;
+      const avatarUrl = `/uploads/avatars/${fileName}`;
+      
+      // Update user's avatar field
+      await User.update(userId, { avatar: avatarUrl });
+      
+      logger.info(`Avatar uploaded for user: ${userId}`);
+      
+      return {
+        success: true,
+        message: 'Avatar uploaded successfully',
+        data: {
+          avatarUrl
+        }
+      };
+    } catch (error) {
+      logger.error('Avatar upload error:', error);
+      throw error;
+    }
   }
 
   /**
