@@ -18,6 +18,8 @@ const ProfilePage = () => {
     // State
     profile,
     passwordData,
+    originalProfile,
+    hasChanges,
     loading,
     saving,
     error,

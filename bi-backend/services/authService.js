@@ -298,7 +298,21 @@ class AuthService {
    */
   async updateUserProfile(userId, updateData) {
     try {
-      const allowedFields = ['first_name', 'last_name', 'department', 'email', 'avatar'];
+      const allowedFields = [
+        'first_name', 
+        'last_name', 
+        'department', 
+        'email', 
+        'avatar',
+        'phone',
+        'address',
+        'bio',
+        'timezone',
+        'language',
+        'notifications',
+        'privacy',
+        'preferences'
+      ];
       const filteredData = {};
 
       // Only allow certain fields to be updated

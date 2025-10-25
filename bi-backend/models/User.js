@@ -16,6 +16,15 @@ async function createUserTable() {
       last_name VARCHAR(100),
       role VARCHAR(50) NOT NULL DEFAULT 'user',
       department VARCHAR(100),
+      avatar TEXT,
+      phone VARCHAR(20),
+      address TEXT,
+      bio TEXT,
+      timezone VARCHAR(50) DEFAULT 'America/New_York',
+      language VARCHAR(10) DEFAULT 'en',
+      notifications JSONB DEFAULT '{"email": true, "push": true, "sms": false, "digest": "daily"}',
+      privacy JSONB DEFAULT '{"profile_visibility": "public", "show_email": false, "show_phone": false, "show_location": false}',
+      preferences JSONB DEFAULT '{"theme": "light", "compact_mode": false, "show_animations": true, "auto_save": true}',
       is_active BOOLEAN DEFAULT true,
       email_verified BOOLEAN DEFAULT false,
       last_login TIMESTAMP,
@@ -25,6 +34,22 @@ async function createUserTable() {
   `;
   
   await database.query(query);
+  
+  // Add avatar column if it doesn't exist (for existing tables)
+  try {
+    await database.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS avatar TEXT;`);
+    await database.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS phone VARCHAR(20);`);
+    await database.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS address TEXT;`);
+    await database.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS bio TEXT;`);
+    await database.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS timezone VARCHAR(50) DEFAULT 'America/New_York';`);
+    await database.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'en';`);
+    await database.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS notifications JSONB DEFAULT '{"email": true, "push": true, "sms": false, "digest": "daily"}';`);
+    await database.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS privacy JSONB DEFAULT '{"profile_visibility": "public", "show_email": false, "show_phone": false, "show_location": false}';`);
+    await database.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{"theme": "light", "compact_mode": false, "show_animations": true, "auto_save": true}';`);
+  } catch (error) {
+    // Columns might already exist, ignore error
+    console.log('Some columns might already exist, continuing...');
+  }
   
   // Create indexes for better performance
   await database.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON ${tableName}(email);`);
@@ -134,8 +159,9 @@ async function update(id, updateData) {
     SET ${fields.join(', ')} 
     WHERE id = $${paramCount}
     RETURNING id, username, email, first_name, last_name, 
-              role, department, is_active, email_verified, 
-              last_login, created_at, updated_at
+              role, department, avatar, phone, address, bio,
+              timezone, language, notifications, privacy, preferences,
+              is_active, email_verified, last_login, created_at, updated_at
   `;
   
   values.push(id);
