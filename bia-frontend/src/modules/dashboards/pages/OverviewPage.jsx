@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useAuth } from '../../../hooks/useAuth';
 import {
   getAllKPIs,
   getKPIStats,
@@ -53,7 +54,8 @@ import {
 } from 'react-icons/md';
 
 const OverviewPage = () => {
-  const [userRole, setUserRole] = useState(ROLES.ADMIN); // TODO: get from auth context
+  const { user } = useAuth();
+  const userRole = user?.role || ROLES.USER;
   const [kpis, setKpis] = useState([]);
   const [kpiStats, setKpiStats] = useState({});
   const [kpiLatest, setKpiLatest] = useState({});

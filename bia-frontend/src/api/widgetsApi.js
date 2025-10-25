@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './authApi';
 
 const BASE_URL = 'http://localhost:3000/api';
 const apiPaths = {
@@ -19,7 +19,7 @@ const apiPaths = {
 // Widget CRUD operations
 export const getAllWidgets = async () => {
   try {
-    const response = await axios.get(apiPaths.WIDGETS);
+    const response = await apiClient.get(apiPaths.WIDGETS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -27,7 +27,7 @@ export const getAllWidgets = async () => {
 };
 export const createWidget = async (widgetData) => {
   try {
-    const response = await axios.post(apiPaths.WIDGETS, widgetData);
+    const response = await apiClient.post(apiPaths.WIDGETS, widgetData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -36,7 +36,7 @@ export const createWidget = async (widgetData) => {
 
 export const getWidgetById = async (id) => {
   try {
-    const response = await axios.get(apiPaths.WIDGET_BY_ID(id));
+    const response = await apiClient.get(apiPaths.WIDGET_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -45,7 +45,7 @@ export const getWidgetById = async (id) => {
 
 export const updateWidget = async (id, updateData) => {
   try {
-    const response = await axios.put(apiPaths.WIDGET_BY_ID(id), updateData);
+    const response = await apiClient.put(apiPaths.WIDGET_BY_ID(id), updateData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -54,7 +54,7 @@ export const updateWidget = async (id, updateData) => {
 
 export const deleteWidget = async (id) => {
   try {
-    const response = await axios.delete(apiPaths.WIDGET_BY_ID(id));
+    const response = await apiClient.delete(apiPaths.WIDGET_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -64,7 +64,7 @@ export const deleteWidget = async (id) => {
 // Widget types and statistics
 export const getWidgetTypes = async () => {
   try {
-    const response = await axios.get(apiPaths.WIDGET_TYPES);
+    const response = await apiClient.get(apiPaths.WIDGET_TYPES);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -76,7 +76,7 @@ export const getWidgetStats = async (dashboardId = null) => {
     const url = dashboardId 
       ? `${apiPaths.WIDGET_STATS}?dashboardId=${dashboardId}`
       : apiPaths.WIDGET_STATS;
-    const response = await axios.get(url);
+    const response = await apiClient.get(url);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -86,7 +86,7 @@ export const getWidgetStats = async (dashboardId = null) => {
 // Widget configuration and positioning
 export const updateWidgetConfig = async (id, config) => {
   try {
-    const response = await axios.put(apiPaths.WIDGET_CONFIG(id), { config });
+    const response = await apiClient.put(apiPaths.WIDGET_CONFIG(id), { config });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -95,7 +95,7 @@ export const updateWidgetConfig = async (id, config) => {
 
 export const updateWidgetPosition = async (id, position) => {
   try {
-    const response = await axios.put(apiPaths.WIDGET_POSITION(id), { position });
+    const response = await apiClient.put(apiPaths.WIDGET_POSITION(id), { position });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -105,7 +105,7 @@ export const updateWidgetPosition = async (id, position) => {
 // Widget data and preview
 export const getWidgetData = async (id) => {
   try {
-    const response = await axios.get(apiPaths.WIDGET_DATA(id));
+    const response = await apiClient.get(apiPaths.WIDGET_DATA(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -114,7 +114,7 @@ export const getWidgetData = async (id) => {
 
 export const getWidgetPreview = async (previewData) => {
   try {
-    const response = await axios.post(apiPaths.WIDGET_PREVIEW, previewData);
+    const response = await apiClient.post(apiPaths.WIDGET_PREVIEW, previewData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -124,7 +124,7 @@ export const getWidgetPreview = async (previewData) => {
 // Widget validation
 export const validateWidgetConfig = async (widgetType, config) => {
   try {
-    const response = await axios.post(apiPaths.VALIDATE_CONFIG, {
+    const response = await apiClient.post(apiPaths.VALIDATE_CONFIG, {
       widgetType,
       config
     });
@@ -137,7 +137,7 @@ export const validateWidgetConfig = async (widgetType, config) => {
 // Dashboard-specific widget operations
 export const getWidgetsByDashboardId = async (dashboardId) => {
   try {
-    const response = await axios.get(apiPaths.WIDGETS_BY_DASHBOARD(dashboardId));
+    const response = await apiClient.get(apiPaths.WIDGETS_BY_DASHBOARD(dashboardId));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -147,7 +147,7 @@ export const getWidgetsByDashboardId = async (dashboardId) => {
 // Widget operations
 export const duplicateWidget = async (id, dashboardId = null, title = null) => {
   try {
-    const response = await axios.post(apiPaths.WIDGET_DUPLICATE(id), {
+    const response = await apiClient.post(apiPaths.WIDGET_DUPLICATE(id), {
       dashboard_id: dashboardId,
       title
     });
@@ -160,7 +160,7 @@ export const duplicateWidget = async (id, dashboardId = null, title = null) => {
 // Batch operations
 export const batchUpdateWidgetPositions = async (positions) => {
   try {
-    const response = await axios.post(apiPaths.BATCH_UPDATE_POSITIONS, {
+    const response = await apiClient.post(apiPaths.BATCH_UPDATE_POSITIONS, {
       positions
     });
     return response.data;

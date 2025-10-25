@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './authApi';
 
 const BASE_URL = 'http://localhost:3000/api';
 const apiPaths = {
@@ -33,7 +33,7 @@ const apiPaths = {
 // Export data operations
 export const exportData = async (dataType, filters = {}, format = 'csv', includeHeaders = true) => {
   try {
-    const response = await axios.post(apiPaths.EXPORT_DATA, {
+    const response = await apiClient.post(apiPaths.EXPORT_DATA, {
       dataType,
       format,
       filters,
@@ -47,7 +47,7 @@ export const exportData = async (dataType, filters = {}, format = 'csv', include
 
 export const exportDataByQuery = async (format = 'csv', filename = null, queryParams = {}) => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_DATA, {
+    const response = await apiClient.get(apiPaths.EXPORT_DATA, {
       params: { format, filename, ...queryParams }
     });
     return response.data;
@@ -59,7 +59,7 @@ export const exportDataByQuery = async (format = 'csv', filename = null, queryPa
 // Export jobs management
 export const getExportJobs = async () => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_JOBS);
+    const response = await apiClient.get(apiPaths.EXPORT_JOBS);
     return response.data || [];
   } catch (error) {
     throw error.response?.data || error.message;
@@ -68,7 +68,7 @@ export const getExportJobs = async () => {
 
 export const getExportJob = async (id) => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_JOB_BY_ID(id));
+    const response = await apiClient.get(apiPaths.EXPORT_JOB_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -77,7 +77,7 @@ export const getExportJob = async (id) => {
 
 export const cancelExportJob = async (id) => {
   try {
-    const response = await axios.delete(apiPaths.EXPORT_JOB_BY_ID(id));
+    const response = await apiClient.delete(apiPaths.EXPORT_JOB_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -87,7 +87,7 @@ export const cancelExportJob = async (id) => {
 // Export by specific types
 export const exportDashboard = async (id, format = 'pdf', options = {}) => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_DASHBOARD(id), {
+    const response = await apiClient.get(apiPaths.EXPORT_DASHBOARD(id), {
       params: { format, ...options }
     });
     return response.data;
@@ -98,7 +98,7 @@ export const exportDashboard = async (id, format = 'pdf', options = {}) => {
 
 export const exportReport = async (id, format = 'pdf', options = {}) => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_REPORT(id), {
+    const response = await apiClient.get(apiPaths.EXPORT_REPORT(id), {
       params: { format, ...options }
     });
     return response.data;
@@ -109,7 +109,7 @@ export const exportReport = async (id, format = 'pdf', options = {}) => {
 
 export const exportAnalytics = async (type, format = 'csv', options = {}) => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_ANALYTICS(type), {
+    const response = await apiClient.get(apiPaths.EXPORT_ANALYTICS(type), {
       params: { format, ...options }
     });
     return response.data;
@@ -120,7 +120,7 @@ export const exportAnalytics = async (type, format = 'csv', options = {}) => {
 
 export const exportKPI = async (id, format = 'csv', options = {}) => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_KPI(id), {
+    const response = await apiClient.get(apiPaths.EXPORT_KPI(id), {
       params: { format, ...options }
     });
     return response.data;
@@ -132,7 +132,7 @@ export const exportKPI = async (id, format = 'csv', options = {}) => {
 // Batch export operations
 export const batchExport = async (exportRequests) => {
   try {
-    const response = await axios.post(apiPaths.BATCH_EXPORT, exportRequests);
+    const response = await apiClient.post(apiPaths.BATCH_EXPORT, exportRequests);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -141,7 +141,7 @@ export const batchExport = async (exportRequests) => {
 
 export const getBatchExportStatus = async (jobId) => {
   try {
-    const response = await axios.get(apiPaths.BATCH_EXPORT_STATUS(jobId));
+    const response = await apiClient.get(apiPaths.BATCH_EXPORT_STATUS(jobId));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -151,7 +151,7 @@ export const getBatchExportStatus = async (jobId) => {
 // Export templates management
 export const getExportTemplates = async () => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_TEMPLATES);
+    const response = await apiClient.get(apiPaths.EXPORT_TEMPLATES);
     return response.data || [];
   } catch (error) {
     throw error.response?.data || error.message;
@@ -160,7 +160,7 @@ export const getExportTemplates = async () => {
 
 export const createExportTemplate = async (templateData) => {
   try {
-    const response = await axios.post(apiPaths.EXPORT_TEMPLATES, templateData);
+    const response = await apiClient.post(apiPaths.EXPORT_TEMPLATES, templateData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -169,7 +169,7 @@ export const createExportTemplate = async (templateData) => {
 
 export const updateExportTemplate = async (id, templateData) => {
   try {
-    const response = await axios.put(apiPaths.EXPORT_TEMPLATE_BY_ID(id), templateData);
+    const response = await apiClient.put(apiPaths.EXPORT_TEMPLATE_BY_ID(id), templateData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -178,7 +178,7 @@ export const updateExportTemplate = async (id, templateData) => {
 
 export const deleteExportTemplate = async (id) => {
   try {
-    const response = await axios.delete(apiPaths.EXPORT_TEMPLATE_BY_ID(id));
+    const response = await apiClient.delete(apiPaths.EXPORT_TEMPLATE_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -188,7 +188,7 @@ export const deleteExportTemplate = async (id) => {
 // Export history
 export const getExportHistory = async (filters = {}) => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_HISTORY, {
+    const response = await apiClient.get(apiPaths.EXPORT_HISTORY, {
       params: filters
     });
     return response.data || [];
@@ -199,7 +199,7 @@ export const getExportHistory = async (filters = {}) => {
 
 export const getExportHistoryItem = async (id) => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_HISTORY_ITEM(id));
+    const response = await apiClient.get(apiPaths.EXPORT_HISTORY_ITEM(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -209,7 +209,7 @@ export const getExportHistoryItem = async (id) => {
 // Download and file management
 export const downloadExport = async (id) => {
   try {
-    const response = await axios.get(apiPaths.DOWNLOAD_EXPORT(id), {
+    const response = await apiClient.get(apiPaths.DOWNLOAD_EXPORT(id), {
       responseType: 'blob'
     });
     return response.data;
@@ -220,7 +220,7 @@ export const downloadExport = async (id) => {
 
 export const getExportStatistics = async () => {
   try {
-    const response = await axios.get(apiPaths.EXPORT_STATS);
+    const response = await apiClient.get(apiPaths.EXPORT_STATS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -229,7 +229,7 @@ export const getExportStatistics = async () => {
 
 export const validateExportRequest = async (exportRequest) => {
   try {
-    const response = await axios.post(apiPaths.VALIDATE_EXPORT, exportRequest);
+    const response = await apiClient.post(apiPaths.VALIDATE_EXPORT, exportRequest);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

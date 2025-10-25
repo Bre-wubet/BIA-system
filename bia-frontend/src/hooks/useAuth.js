@@ -1,6 +1,9 @@
 import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../constants/roles';
 
+// Re-export the main useAuth hook for convenience
+export { useAuth };
+
 // Hook for authentication state
 export const useAuthState = () => {
   const { user, isAuthenticated, isLoading, error } = useAuth();

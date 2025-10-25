@@ -112,7 +112,7 @@ const DashboardLayout = () => {
 
   // Quick Actions based on role
   const getQuickActions = () => {
-    switch (userRole) {
+    switch (user?.role) {
       case ROLES.FINANCE:
         return ["New Budget Report", "Export Ledger"];
       case ROLES.SALES:
@@ -176,9 +176,14 @@ const DashboardLayout = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Brie</p>
-                <p className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block ${roleBadgeColors[userRole]}`}>
-                  {userRole.replace('_', ' ')}
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.first_name && user?.last_name 
+                    ? `${user.first_name} ${user.last_name}`
+                    : user?.username || 'User'
+                  }
+                </p>
+                <p className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block ${roleBadgeColors[user?.role] || 'bg-gray-100 text-gray-700'}`}>
+                  {user?.role?.replace('_', ' ') || 'User'}
                 </p>
               </div>
             </div>

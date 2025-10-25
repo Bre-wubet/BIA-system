@@ -68,180 +68,150 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 };
 
 const AppRoutes = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
   return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+      <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+      
+      {/* Root redirect */}
+      <Route 
+        path="/" 
+        element={
+          isAuthenticated ? 
+            <Navigate to={ROUTES.OVERVIEW} replace /> : 
+            <Navigate to={ROUTES.LOGIN} replace />
+        } 
+      />
+      
+      {/* Protected Routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <DashboardLayout />
+        </ProtectedRoute>
+      }>
+        {/* Overview - accessible to all authenticated users */}
+        <Route index element={<Navigate to={ROUTES.OVERVIEW} replace />} />
+        <Route path="overview" element={<OverviewPage />} />
 
-      <Routes>
-        {/* Public Routes */}
-        <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-        <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-        
-        {/* Protected Routes */}
-        <Route path="/" element={
-          <ProtectedRoute>
-            <DashboardLayout />
+        {/* Dashboards - accessible to all authenticated users */}
+        <Route path="dashboards" element={<DashboardsPage />} />
+        <Route path="dashboards/new" element={<CreateDashboard />} />
+        <Route path="dashboards/:id" element={<DashboardDetail />} />
+        <Route path="dashboards/:id/edit" element={<DashboardEdit />} />
+
+        {/* KPIs - accessible to all authenticated users except viewers */}
+        <Route path="kpis" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
+            <KPIsPage />
           </ProtectedRoute>
-        }>
-          {/* Overview - accessible to all authenticated users */}
-          {/* <Route index element={<Navigate to={ROUTES.OVERVIEW} replace />} /> */}
-          <Route path={ROUTES.OVERVIEW} element={
-            <ProtectedRoute><OverviewPage /></ProtectedRoute>
-          } />
+        } />
+        <Route path="kpis/new-kpi" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
+            <CreateNewKPI />
+          </ProtectedRoute>
+        } />
+        <Route path="kpis/:id/detail" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
+            <KpiViewDetails />
+          </ProtectedRoute>
+        } />
+        <Route path="kpis/:id/edit" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
+            <EditKPIPage />
+          </ProtectedRoute>
+        } />
 
-          {/* Dashboards - accessible to all authenticated users */}
-          <Route path={ROUTES.DASHBOARDS} element={
-            <ProtectedRoute><DashboardsPage /></ProtectedRoute>
-          } />
-          <Route path={ROUTES.DASHBOARD_NEW} element={
-            <ProtectedRoute><CreateDashboard /></ProtectedRoute>
-          } />
-          <Route path={ROUTES.DASHBOARD_DETAIL} element={
-            <ProtectedRoute><DashboardDetail /></ProtectedRoute>
-          } />
-          <Route path={ROUTES.DASHBOARD_EDIT} element={
-            <ProtectedRoute><DashboardEdit /></ProtectedRoute>
-          } />
+        {/* Widgets - accessible to all authenticated users */}
+        <Route path="widgets" element={<WidgetsPage />} />
+        <Route path="widgets/new" element={<CreateWidget />} />
+        <Route path="widgets/:id" element={<WidgetDetail />} />
+        <Route path="widgets/:id/edit" element={<WidgetEdit />} />
 
-          {/* KPIs - accessible to all authenticated users except viewers */}
-          <Route path={ROUTES.KPIS} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
-              <KPIsPage />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.NEW_KPI} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
-              <CreateNewKPI />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.KPI_DETAIL} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
-              <KpiViewDetails />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.KPI_EDIT} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
-              <EditKPIPage />
-            </ProtectedRoute>
-          } />
-          {/* Widgets - accessible to all authenticated users except viewers */}
-          <Route path={ROUTES.WIDGETS} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
-              <WidgetsPage />
-            </ProtectedRoute>
-          } />
+        {/* Integration - accessible to admin and analyst only */}
+        <Route path="integration" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ANALYST]}>
+            <IntegrationPage />
+          </ProtectedRoute>
+        } />
+        <Route path="integration/new-source" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ANALYST]}>
+            <DataSourceNew />
+          </ProtectedRoute>
+        } />
+        <Route path="integration/edit-source/:id" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ANALYST]}>
+            <DataSourceEdit />
+          </ProtectedRoute>
+        } />
+        <Route path="integration/view/:id" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ANALYST]}>
+            <DataSourceDetails />
+          </ProtectedRoute>
+        } />
+        <Route path="integration/data-sync" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ANALYST]}>
+            <DataSync />
+          </ProtectedRoute>
+        } />
+        <Route path="integration/import-export" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ANALYST]}>
+            <ImportExport />
+          </ProtectedRoute>
+        } />
+        <Route path="integration/sync-history" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
+            <SyncHistory />
+          </ProtectedRoute>
+        } />
 
-          {/* Create Widget - accessible to all authenticated users except viewers */}
-          <Route path={ROUTES.WIDGET_NEW} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
-              <CreateWidget />
-            </ProtectedRoute>
-          } />
+        {/* Reports - accessible to admin, manager, and analyst */}
+        <Route path="reports" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
+            <ReportsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="reports/new" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
+            <CreateReportPage />
+          </ProtectedRoute>
+        } />
+        <Route path="reports/:id" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
+            <ReportDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="reports/:id/edit" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
+            <ReportEditPage />
+          </ProtectedRoute>
+        } />
+        <Route path="reports/templates" element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
+            <ReportTemplatesPage />
+          </ProtectedRoute>
+        } />
 
-          {/* Widget Detail - accessible to all authenticated users except viewers */}
-          <Route path={ROUTES.WIDGET_DETAIL} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
-              <WidgetDetail />
-            </ProtectedRoute>
-          } />
-
-          {/* Widget Edit - accessible to all authenticated users except viewers */}
-          <Route path={ROUTES.WIDGET_EDIT} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
-              <WidgetEdit />
-            </ProtectedRoute>
-          } />
-
-          {/* Predictive Analytics - accessible to all authenticated users except viewers */}
-          <Route path={ROUTES.PREDICTIVE} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE]}>
-              <div>Predictive Analytics Page</div>
-            </ProtectedRoute>
-          } />
-          
-          {/* Data Integration - accessible only to admin, manager, and analyst */}
-          <Route path={ROUTES.INTEGRATION} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
-              <IntegrationPage />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.INTEGRATION_NEW_SOURCE} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
-              <DataSourceNew />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.INTEGRATION_EDIT_SOURCE} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
-              <DataSourceEdit />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.INTEGRATION_DATA_SYNC} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
-              <DataSync />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.INTEGRATION_IMPORT_EXPORT} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
-              <ImportExport />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.INTEGRATION_VIEW_SOURCE} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
-              <DataSourceDetails />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.HISTORY_SYNC_LOG} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST]}>
-              <SyncHistory />
-            </ProtectedRoute>
-          } />
-          {/* Reports - accessible to all authenticated users */}
-          <Route path={ROUTES.REPORTS} element={
-            <ProtectedRoute><ReportsPage /></ProtectedRoute>
-          } />
-          <Route path={ROUTES.REPORTS_NEW} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE, ROLES.OPERATIONS]}>
-              <CreateReportPage />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.REPORTS_DETAIL} element={
-            <ProtectedRoute><ReportDetailPage /></ProtectedRoute>
-          } />
-          <Route path={ROUTES.REPORTS_EDIT} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE, ROLES.OPERATIONS]}>
-              <ReportEditPage />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.REPORTS_TEMPLATES} element={
-            <ProtectedRoute><ReportTemplatesPage /></ProtectedRoute>
-          } />
-
-          {/* Exports - accessible to all authenticated users */}
-          <Route path={ROUTES.EXPORTS} element={
-            <ProtectedRoute><ExportsPage /></ProtectedRoute>
-          } />
-          <Route path={ROUTES.EXPORTS_NEW} element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.ANALYST, ROLES.SALES, ROLES.HR, ROLES.FINANCE, ROLES.OPERATIONS]}>
-              <CreateExportPage />
-            </ProtectedRoute>
-          } />
-          <Route path={ROUTES.EXPORTS_DETAIL} element={
-            <ProtectedRoute><ExportDetailPage /></ProtectedRoute>
-          } />
-          <Route path={ROUTES.EXPORTS_HISTORY} element={
-            <ProtectedRoute><ExportHistoryPage /></ProtectedRoute>
-          } />
-          <Route path={ROUTES.EXPORTS_TEMPLATES} element={
-            <ProtectedRoute><ExportTemplatesPage /></ProtectedRoute>
-          } />
-          
-          {/* Settings - accessible to all authenticated users */}
-          <Route path={ROUTES.SETTINGS} element={<div>Settings Page</div>} />
-          <Route path={ROUTES.PROFILE} element={<div>Profile Page</div>} />
-        </Route>
-        
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to={ROUTES.OVERVIEW} replace />} />
-      </Routes>
-
+        {/* Exports - accessible to all authenticated users */}
+        <Route path="exports" element={<ExportsPage />} />
+        <Route path="exports/new" element={<CreateExportPage />} />
+        <Route path="exports/:id" element={<ExportDetailPage />} />
+        <Route path="exports/:id/edit" element={<ExportDetailPage />} />
+        <Route path="exports/history" element={<ExportHistoryPage />} />
+        <Route path="exports/templates" element={<ExportTemplatesPage />} />
+      </Route>
+    </Routes>
   );
 };
 

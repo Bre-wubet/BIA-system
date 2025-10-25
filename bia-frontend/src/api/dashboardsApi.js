@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './authApi';
 
 const BASE_URL = 'http://localhost:3000/api';
 const apiPaths = {
@@ -19,7 +19,7 @@ const apiPaths = {
 // Dashboard CRUD operations
 export const createDashboard = async (dashboardData) => {
   try {
-    const response = await axios.post(apiPaths.DASHBOARDS, dashboardData);
+    const response = await apiClient.post(apiPaths.DASHBOARDS, dashboardData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -28,7 +28,7 @@ export const createDashboard = async (dashboardData) => {
 
 export const getAllDashboards = async () => {
   try {
-    const response = await axios.get(apiPaths.DASHBOARDS);
+    const response = await apiClient.get(apiPaths.DASHBOARDS);
     return response.data || [];
   } catch (error) {
     throw error.response?.data || error.message;
@@ -37,7 +37,7 @@ export const getAllDashboards = async () => {
 
 export const getDashboardById = async (id) => {
   try {
-    const response = await axios.get(apiPaths.DASHBOARD_BY_ID(id));
+    const response = await apiClient.get(apiPaths.DASHBOARD_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -46,7 +46,7 @@ export const getDashboardById = async (id) => {
 
 export const getDashboardWithData = async (id) => {
   try {
-    const response = await axios.get(apiPaths.DASHBOARD_WITH_DATA(id));
+    const response = await apiClient.get(apiPaths.DASHBOARD_WITH_DATA(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -55,7 +55,7 @@ export const getDashboardWithData = async (id) => {
 
 export const updateDashboard = async (id, updateData) => {
   try {
-    const response = await axios.put(apiPaths.DASHBOARD_BY_ID(id), updateData);
+    const response = await apiClient.put(apiPaths.DASHBOARD_BY_ID(id), updateData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -64,7 +64,7 @@ export const updateDashboard = async (id, updateData) => {
 
 export const deleteDashboard = async (id) => {
   try {
-    const response = await axios.delete(apiPaths.DASHBOARD_BY_ID(id));
+    const response = await apiClient.delete(apiPaths.DASHBOARD_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -74,7 +74,7 @@ export const deleteDashboard = async (id) => {
 // Dashboard layout and configuration
 export const updateDashboardLayout = async (id, layout) => {
   try {
-    const response = await axios.put(apiPaths.DASHBOARD_LAYOUT(id), { layout });
+    const response = await apiClient.put(apiPaths.DASHBOARD_LAYOUT(id), { layout });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -84,7 +84,7 @@ export const updateDashboardLayout = async (id, layout) => {
 // Dashboard operations
 export const duplicateDashboard = async (id, name) => {
   try {
-    const response = await axios.post(apiPaths.DASHBOARD_DUPLICATE(id), { name });
+    const response = await apiClient.post(apiPaths.DASHBOARD_DUPLICATE(id), { name });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -93,7 +93,7 @@ export const duplicateDashboard = async (id, name) => {
 
 export const getDashboardTemplates = async () => {
   try {
-    const response = await axios.get(apiPaths.DASHBOARD_TEMPLATES);
+    const response = await apiClient.get(apiPaths.DASHBOARD_TEMPLATES);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -102,7 +102,7 @@ export const getDashboardTemplates = async () => {
 
 export const createFromTemplate = async (templateId, name, description) => {
   try {
-    const response = await axios.post(apiPaths.CREATE_FROM_TEMPLATE, {
+    const response = await apiClient.post(apiPaths.CREATE_FROM_TEMPLATE, {
       templateId,
       name,
       description
@@ -116,7 +116,7 @@ export const createFromTemplate = async (templateId, name, description) => {
 // Default dashboard management
 export const setDefaultDashboard = async (dashboardId) => {
   try {
-    const response = await axios.post(apiPaths.SET_DEFAULT, { dashboardId });
+    const response = await apiClient.post(apiPaths.SET_DEFAULT, { dashboardId });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -125,7 +125,7 @@ export const setDefaultDashboard = async (dashboardId) => {
 
 export const getDefaultDashboard = async () => {
   try {
-    const response = await axios.get(apiPaths.DEFAULT);
+    const response = await apiClient.get(apiPaths.DEFAULT);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -135,7 +135,7 @@ export const getDefaultDashboard = async () => {
 // Dashboard search and statistics
 export const searchDashboards = async (query, limit = 10) => {
   try {
-    const response = await axios.get(apiPaths.SEARCH, {
+    const response = await apiClient.get(apiPaths.SEARCH, {
       params: { q: query, limit }
     });
     return response.data;
@@ -146,7 +146,7 @@ export const searchDashboards = async (query, limit = 10) => {
 
 export const getDashboardStats = async () => {
   try {
-    const response = await axios.get(apiPaths.STATS);
+    const response = await apiClient.get(apiPaths.STATS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -155,7 +155,7 @@ export const getDashboardStats = async () => {
 
 export const getPublicDashboards = async () => {
   try {
-    const response = await axios.get(apiPaths.PUBLIC);
+    const response = await apiClient.get(apiPaths.PUBLIC);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

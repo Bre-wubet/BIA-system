@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './authApi';
 
 const BASE_URL = 'http://localhost:3000/api';
 const apiPaths = {
@@ -41,7 +41,7 @@ const apiPaths = {
 // Report CRUD operations
 export const createReport = async (reportData) => {
   try {
-    const response = await axios.post(apiPaths.REPORTS, reportData);
+    const response = await apiClient.post(apiPaths.REPORTS, reportData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -50,7 +50,7 @@ export const createReport = async (reportData) => {
 
 export const getAllReports = async () => {
   try {
-    const response = await axios.get(apiPaths.REPORTS);
+    const response = await apiClient.get(apiPaths.REPORTS);
     return response.data || [];
   } catch (error) {
     throw error.response?.data || error.message;
@@ -59,7 +59,7 @@ export const getAllReports = async () => {
 
 export const getReportById = async (id) => {
   try {
-    const response = await axios.get(apiPaths.REPORT_BY_ID(id));
+    const response = await apiClient.get(apiPaths.REPORT_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -68,7 +68,7 @@ export const getReportById = async (id) => {
 
 export const updateReport = async (id, updateData) => {
   try {
-    const response = await axios.put(apiPaths.REPORT_BY_ID(id), updateData);
+    const response = await apiClient.put(apiPaths.REPORT_BY_ID(id), updateData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -77,7 +77,7 @@ export const updateReport = async (id, updateData) => {
 
 export const deleteReport = async (id) => {
   try {
-    const response = await axios.delete(apiPaths.REPORT_BY_ID(id));
+    const response = await apiClient.delete(apiPaths.REPORT_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -87,7 +87,7 @@ export const deleteReport = async (id) => {
 // Report metadata and filtering
 export const getReportStats = async () => {
   try {
-    const response = await axios.get(apiPaths.REPORT_STATS);
+    const response = await apiClient.get(apiPaths.REPORT_STATS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -96,7 +96,7 @@ export const getReportStats = async () => {
 
 export const getReportTypes = async () => {
   try {
-    const response = await axios.get(apiPaths.REPORT_TYPES);
+    const response = await apiClient.get(apiPaths.REPORT_TYPES);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -105,7 +105,7 @@ export const getReportTypes = async () => {
 
 export const getReportCategories = async () => {
   try {
-    const response = await axios.get(apiPaths.REPORT_CATEGORIES);
+    const response = await apiClient.get(apiPaths.REPORT_CATEGORIES);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -114,7 +114,7 @@ export const getReportCategories = async () => {
 
 export const getReportTemplates = async () => {
   try {
-    const response = await axios.get(apiPaths.REPORT_TEMPLATES);
+    const response = await apiClient.get(apiPaths.REPORT_TEMPLATES);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -123,7 +123,7 @@ export const getReportTemplates = async () => {
 
 export const getScheduledReports = async () => {
   try {
-    const response = await axios.get(apiPaths.SCHEDULED_REPORTS);
+    const response = await apiClient.get(apiPaths.SCHEDULED_REPORTS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -133,7 +133,7 @@ export const getScheduledReports = async () => {
 // Report execution and generation
 export const runReport = async (id, parameters = {}) => {
   try {
-    const response = await axios.post(apiPaths.REPORT_RUN(id), parameters);
+    const response = await apiClient.post(apiPaths.REPORT_RUN(id), parameters);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -142,7 +142,7 @@ export const runReport = async (id, parameters = {}) => {
 
 export const generateReport = async (id, format = 'pdf', parameters = {}) => {
   try {
-    const response = await axios.get(apiPaths.REPORT_GENERATE(id), {
+    const response = await apiClient.get(apiPaths.REPORT_GENERATE(id), {
       params: { format, ...parameters }
     });
     return response.data;
@@ -153,7 +153,7 @@ export const generateReport = async (id, format = 'pdf', parameters = {}) => {
 
 export const executeReport = async (id, parameters = {}) => {
   try {
-    const response = await axios.post(apiPaths.REPORT_EXECUTE(id), parameters);
+    const response = await apiClient.post(apiPaths.REPORT_EXECUTE(id), parameters);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -162,7 +162,7 @@ export const executeReport = async (id, parameters = {}) => {
 
 export const exportReport = async (id, format = 'csv', parameters = {}) => {
   try {
-    const response = await axios.get(apiPaths.REPORT_EXPORT(id), {
+    const response = await apiClient.get(apiPaths.REPORT_EXPORT(id), {
       params: { format, ...parameters }
     });
     return response.data;
@@ -173,7 +173,7 @@ export const exportReport = async (id, format = 'csv', parameters = {}) => {
 
 export const duplicateReport = async (id) => {
   try {
-    const response = await axios.post(apiPaths.REPORT_DUPLICATE(id));
+    const response = await apiClient.post(apiPaths.REPORT_DUPLICATE(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -183,7 +183,7 @@ export const duplicateReport = async (id) => {
 // Scheduling operations
 export const updateReportSchedule = async (id, schedule) => {
   try {
-    const response = await axios.put(apiPaths.REPORT_SCHEDULE(id), { schedule });
+    const response = await apiClient.put(apiPaths.REPORT_SCHEDULE(id), { schedule });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -192,7 +192,7 @@ export const updateReportSchedule = async (id, schedule) => {
 
 export const scheduleReport = async (id, schedule) => {
   try {
-    const response = await axios.put(apiPaths.REPORT_SCHEDULE(id), { schedule });
+    const response = await apiClient.put(apiPaths.REPORT_SCHEDULE(id), { schedule });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -201,7 +201,7 @@ export const scheduleReport = async (id, schedule) => {
 
 export const removeReportSchedule = async (id) => {
   try {
-    const response = await axios.delete(apiPaths.REPORT_SCHEDULE(id));
+    const response = await apiClient.delete(apiPaths.REPORT_SCHEDULE(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -211,7 +211,7 @@ export const removeReportSchedule = async (id) => {
 // Recipients management
 export const updateReportRecipients = async (id, recipients) => {
   try {
-    const response = await axios.put(apiPaths.REPORT_RECIPIENTS(id), { recipients });
+    const response = await apiClient.put(apiPaths.REPORT_RECIPIENTS(id), { recipients });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -220,7 +220,7 @@ export const updateReportRecipients = async (id, recipients) => {
 
 export const getReportRecipients = async (id) => {
   try {
-    const response = await axios.get(apiPaths.REPORT_RECIPIENTS(id));
+    const response = await apiClient.get(apiPaths.REPORT_RECIPIENTS(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -230,7 +230,7 @@ export const getReportRecipients = async (id) => {
 // Sharing
 export const shareReport = async (id, shareData) => {
   try {
-    const response = await axios.post(apiPaths.REPORT_SHARE(id), shareData);
+    const response = await apiClient.post(apiPaths.REPORT_SHARE(id), shareData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -240,7 +240,7 @@ export const shareReport = async (id, shareData) => {
 // History and logs
 export const getReportHistory = async (id) => {
   try {
-    const response = await axios.get(apiPaths.REPORT_HISTORY(id));
+    const response = await apiClient.get(apiPaths.REPORT_HISTORY(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -249,7 +249,7 @@ export const getReportHistory = async (id) => {
 
 export const getReportLogs = async (id) => {
   try {
-    const response = await axios.get(apiPaths.REPORT_LOGS(id));
+    const response = await apiClient.get(apiPaths.REPORT_LOGS(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -259,7 +259,7 @@ export const getReportLogs = async (id) => {
 // Template operations
 export const createReportFromTemplate = async (templateId, reportData) => {
   try {
-    const response = await axios.post(apiPaths.CREATE_FROM_TEMPLATE(templateId), reportData);
+    const response = await apiClient.post(apiPaths.CREATE_FROM_TEMPLATE(templateId), reportData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -269,7 +269,7 @@ export const createReportFromTemplate = async (templateId, reportData) => {
 // Batch operations
 export const generateMultipleReports = async (reportIds, options = {}) => {
   try {
-    const response = await axios.post(apiPaths.BATCH_GENERATE, {
+    const response = await apiClient.post(apiPaths.BATCH_GENERATE, {
       reportIds,
       ...options
     });
@@ -281,7 +281,7 @@ export const generateMultipleReports = async (reportIds, options = {}) => {
 
 export const scheduleMultipleReports = async (scheduleData) => {
   try {
-    const response = await axios.post(apiPaths.BATCH_SCHEDULE, scheduleData);
+    const response = await apiClient.post(apiPaths.BATCH_SCHEDULE, scheduleData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
