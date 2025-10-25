@@ -5,9 +5,13 @@ import { body, param } from 'express-validator';
 import * as dataIntegrationController from '../controllers/dataSourceController.js';
 import * as mappingController from '../controllers/mappingRuleController.js';
 import { validateRequest } from '../middlewares/validateRequest.js';
-//import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
 // import { requireRole, requireAdmin } from '../middlewares/roleMiddleware.js';
-import { mockAuth } from '../middlewares/mockAuth.js';
+
+const router = express.Router();
+
+// Apply authentication middleware to all routes
+router.use(authMiddleware);
 
 // ---------------- Validation Schemas ---------------- //
 // const createDataSourceValidation = [
@@ -46,47 +50,46 @@ const syncDataSourceValidation = [
 ];
 
 // ---------------- Router Setup ---------------- //
-const router = express.Router();
 
 // Apply authentication to all routes
 //router.use(authMiddleware);
 
 
 // CRUD Routes
-router.post('/', mockAuth, dataIntegrationController.createDataSource);
-router.get('/', mockAuth, dataIntegrationController.getAllDataSources);
-router.get('/types', mockAuth, dataIntegrationController.getDataSourceTypes);
-router.get('/active-datas', mockAuth, dataIntegrationController.getActiveDataSources);
-router.get('/status', mockAuth, dataIntegrationController.getSyncStatus);
+router.post('/', dataIntegrationController.createDataSource);
+router.get('/', dataIntegrationController.getAllDataSources);
+router.get('/types', dataIntegrationController.getDataSourceTypes);
+router.get('/active-datas', dataIntegrationController.getActiveDataSources);
+router.get('/status', dataIntegrationController.getSyncStatus);
 
 // // Single Data Source Routes
-router.get('/module-type', mockAuth, dataIntegrationController.getDataSourcesByModuleAndType);
-router.get('/:id', mockAuth, dataIntegrationController.getDataSource);
-router.put('/:id', mockAuth, updateDataSourceValidation, dataIntegrationController.updateDataSource);
-router.put('/:id/status', mockAuth, updateDataSourceValidation, dataIntegrationController.updateDataSourceStatus);
-router.delete('/:id', mockAuth, dataSourceIdValidation, dataIntegrationController.softDeleteDataSource);
-router.delete('/:id/hard', mockAuth, dataIntegrationController.deleteDataSource);
+router.get('/module-type', dataIntegrationController.getDataSourcesByModuleAndType);
+router.get('/:id', dataIntegrationController.getDataSource);
+router.put('/:id', updateDataSourceValidation, dataIntegrationController.updateDataSource);
+router.put('/:id/status', updateDataSourceValidation, dataIntegrationController.updateDataSourceStatus);
+router.delete('/:id', dataSourceIdValidation, dataIntegrationController.softDeleteDataSource);
+router.delete('/:id/hard', dataIntegrationController.deleteDataSource);
 
 // // Connection Testing
-router.post('/:id/test', mockAuth, dataIntegrationController.testConnectionById);
+router.post('/:id/test', dataIntegrationController.testConnectionById);
 
 // Sync Operations
-router.post('/:id/sync', mockAuth, dataIntegrationController.syncDataSource);
-router.get('/sync/queue', mockAuth, dataIntegrationController.getSyncQueue);
-router.get('/sync/logs', mockAuth, dataIntegrationController.getIntegrationLogs);
-router.get('/sync/logs/:dataSourceId/paginate', mockAuth, dataIntegrationController.fetchSyncHistoryByDataSourceId);
-router.get('/sync/logs/paginated', mockAuth, dataIntegrationController.getPaginatedIntegrationLogs);
-router.get('/sync/logs/:logId/records', mockAuth, dataIntegrationController.getLogRecordsByLogId);
-router.get('/sync/needing-sync', mockAuth, dataIntegrationController.getDataSourcesNeedingSync);
+router.post('/:id/sync', dataIntegrationController.syncDataSource);
+router.get('/sync/queue', dataIntegrationController.getSyncQueue);
+router.get('/sync/logs', dataIntegrationController.getIntegrationLogs);
+router.get('/sync/logs/:dataSourceId/paginate', dataIntegrationController.fetchSyncHistoryByDataSourceId);
+router.get('/sync/logs/paginated', dataIntegrationController.getPaginatedIntegrationLogs);
+router.get('/sync/logs/:logId/records', dataIntegrationController.getLogRecordsByLogId);
+router.get('/sync/needing-sync', dataIntegrationController.getDataSourcesNeedingSync);
 
 // // Batch Operations
-router.post('/sync/batch', mockAuth, dataIntegrationController.syncMultipleDataSources);
-router.post('/test/batch', mockAuth, dataIntegrationController.testMultipleConnections);
+router.post('/sync/batch', dataIntegrationController.syncMultipleDataSources);
+router.post('/test/batch', dataIntegrationController.testMultipleConnections);
 
 // Mapping Routes
-router.get('/:id/mappings', mockAuth, mappingController.getRules);
-router.post('/:id/mappings', mockAuth, mappingController.addRule);
-router.put('/:id/mappings/:mapId', mockAuth, mappingController.updateRule);
-router.delete('/:id/mappings/:mapId', mockAuth, mappingController.deleteRule);
+router.get('/:id/mappings', mappingController.getRules);
+router.post('/:id/mappings', mappingController.addRule);
+router.put('/:id/mappings/:mapId', mappingController.updateRule);
+router.delete('/:id/mappings/:mapId', mappingController.deleteRule);
 
 export default router;

@@ -12,6 +12,7 @@ import database from './config/db.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
 
 // Routes
+import authRoutes from './routes/authRoutes.js';
 // import userRoutes from './routes/userRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 // import analyticsRoutes from './routes/analyticsRoutes.js';
@@ -111,6 +112,7 @@ async function createServer() {
 
   
   // Routes
+  app.use('/api/auth', authRoutes);
 //   app.use('/api/users', userRoutes);
   app.use('/api/dashboards', dashboardRoutes);
 //   app.use('/api/analytics', analyticsRoutes);
@@ -137,6 +139,7 @@ async function createServer() {
       message: 'BI Analytics System API',
       version: '1.0.0',
       endpoints: {
+        auth: '/api/auth',
         users: '/api/users',
         dashboards: '/api/dashboards',
         analytics: '/api/analytics',

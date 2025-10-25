@@ -1,12 +1,12 @@
 import express from 'express';
 import * as reportController from '../controllers/reportController.js';
 import { validateRequest } from '../middlewares/validateRequest.js';
-import { mockAuth } from '../middlewares/mockAuth.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Apply authentication middleware to all routes
-router.use(mockAuth);
+router.use(authMiddleware);
 
 // Report CRUD routes
 router.post('/', validateRequest({

@@ -2,12 +2,12 @@
 import express from 'express';
 import * as exportController from '../controllers/exportController.js';
 import { validateRequest } from '../middlewares/validateRequest.js';
-import { mockAuth } from '../middlewares/mockAuth.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Apply authentication middleware to all routes
-router.use(mockAuth);
+router.use(authMiddleware);
 
 // Export data routes
 router.post('/data', validateRequest({

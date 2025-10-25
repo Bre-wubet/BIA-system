@@ -1,12 +1,12 @@
 import express from 'express';
 import * as dashboardController from '../controllers/dashboardController.js';
 import { validateRequest } from '../middlewares/validateRequest.js';
-import { mockAuth } from '../middlewares/mockAuth.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Apply authentication middleware to all routes
-router.use(mockAuth);
+router.use(authMiddleware);
 
 // ----------------- Dashboard CRUD -----------------
 router.post(

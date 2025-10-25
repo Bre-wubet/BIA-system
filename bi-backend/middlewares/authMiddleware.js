@@ -3,9 +3,10 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import logger from '../config/logger.js';
 
-
-//  Required authentication middleware
-
+/**
+ * Required authentication middleware
+ * Verifies JWT token and sets user information in request
+ */
 export const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
@@ -21,6 +22,15 @@ export const authMiddleware = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Verify token type
+      if (decoded.type !== 'access') {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token type.'
+        });
+      }
+
       const user = await User.findById(decoded.userId);
 
       if (!user) {
@@ -37,20 +47,37 @@ export const authMiddleware = async (req, res, next) => {
         });
       }
 
+      // Set user information in request object
       req.user = {
         id: user.id,
         username: user.username,
         email: user.email,
         role: user.role,
-        department: user.department
+        department: user.department,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        is_active: user.is_active,
+        email_verified: user.email_verified
       };
 
       next();
     } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Token has expired.'
+        });
+      } else if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token.'
+        });
+      }
+      
       logger.error('Token verification failed:', error.message);
       return res.status(401).json({
         success: false,
-        message: 'Invalid token.'
+        message: 'Token verification failed.'
       });
     }
   } catch (error) {
@@ -62,8 +89,10 @@ export const authMiddleware = async (req, res, next) => {
   }
 };
 
-//  Optional authentication middleware
-
+/**
+ * Optional authentication middleware
+ * Sets user information if token is valid, but doesn't require authentication
+ */
 export const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
@@ -76,6 +105,12 @@ export const optionalAuth = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Verify token type
+      if (decoded.type !== 'access') {
+        return next(); // proceed without user if token type is invalid
+      }
+
       const user = await User.findById(decoded.userId);
 
       if (user?.is_active) {
@@ -84,7 +119,11 @@ export const optionalAuth = async (req, res, next) => {
           username: user.username,
           email: user.email,
           role: user.role,
-          department: user.department
+          department: user.department,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          is_active: user.is_active,
+          email_verified: user.email_verified
         };
       }
 
@@ -98,10 +137,13 @@ export const optionalAuth = async (req, res, next) => {
   }
 };
 
-//  Token generation utility
+/**
+ * Token generation utility
+ * Generates JWT access token with proper type
+ */
 export const generateToken = (userId) => {
   return jwt.sign(
-    { userId },
+    { userId, type: 'access' },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
   );
