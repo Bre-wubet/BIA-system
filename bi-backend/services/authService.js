@@ -389,15 +389,14 @@ class AuthService {
    */
   async uploadAvatar(userId, file) {
     try {
-      // In a real application, you would upload to cloud storage (AWS S3, Cloudinary, etc.)
-      // For now, we'll simulate storing the file and return a URL
-      const fileName = `avatar_${userId}_${Date.now()}.${file.originalname.split('.').pop()}`;
-      const avatarUrl = `/uploads/avatars/${fileName}`;
+      // The file has already been saved by multer middleware
+      // We just need to update the user's avatar field with the file path
+      const avatarUrl = `/uploads/avatars/${file.filename}`;
       
       // Update user's avatar field
       await User.update(userId, { avatar: avatarUrl });
       
-      logger.info(`Avatar uploaded for user: ${userId}`);
+      logger.info(`Avatar uploaded for user: ${userId}, file: ${file.filename}`);
       
       return {
         success: true,

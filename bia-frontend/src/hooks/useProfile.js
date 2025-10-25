@@ -156,13 +156,17 @@ export const useProfile = () => {
       // If there's a new image file, upload it first
       if (imageFile) {
         console.log('Uploading image file:', imageFile); // Debug log
+        const token = localStorage.getItem('accessToken');
+        console.log('Token exists:', !!token); // Debug log
+        console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'No token'); // Debug log
+        
         const formData = new FormData();
         formData.append('avatar', imageFile);
         
         const uploadResponse = await fetch('http://localhost:3000/api/auth/upload-avatar', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
           body: formData
         });
