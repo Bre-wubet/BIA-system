@@ -55,7 +55,6 @@ export const useProfile = () => {
 
   useEffect(() => {
     if (user) {
-      console.log('User data loaded:', user); // Debug log
       const userProfile = {
         first_name: user.first_name || '',
         last_name: user.last_name || '',
@@ -88,7 +87,6 @@ export const useProfile = () => {
           auto_save: true
         }
       };
-      console.log('Profile initialized:', userProfile); // Debug log
       setProfile(userProfile);
       setOriginalProfile(userProfile);
     }
@@ -99,12 +97,10 @@ export const useProfile = () => {
   }, [profile, originalProfile]);
 
   const handleChange = (key, value) => {
-    console.log('Profile change:', key, value); // Debug log
     setProfile(prev => ({ ...prev, [key]: value }));
   };
 
   const handleNestedChange = (parent, key, value) => {
-    console.log('Nested profile change:', parent, key, value); // Debug log
     setProfile(prev => ({
       ...prev,
       [parent]: {
@@ -150,15 +146,11 @@ export const useProfile = () => {
     setSaving(true);
     setError(null);
     try {
-      console.log('Saving profile:', profile); // Debug log
       let updatedProfile = { ...profile };
       
       // If there's a new image file, upload it first
       if (imageFile) {
-        console.log('Uploading image file:', imageFile); // Debug log
         const token = localStorage.getItem('accessToken');
-        console.log('Token exists:', !!token); // Debug log
-        console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'No token'); // Debug log
         
         const formData = new FormData();
         formData.append('avatar', imageFile);
@@ -173,18 +165,15 @@ export const useProfile = () => {
         
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
-          console.error('Upload failed:', errorText); // Debug log
           throw new Error(`Failed to upload image: ${errorText}`);
         }
         
         const uploadResult = await uploadResponse.json();
-        console.log('Upload result:', uploadResult); // Debug log
         if (uploadResult.success) {
           updatedProfile.avatar = uploadResult.data.avatarUrl;
         }
       }
       
-      console.log('Updating profile with:', updatedProfile); // Debug log
       await updateProfile(updatedProfile);
       setProfile(updatedProfile);
       setOriginalProfile(updatedProfile);
@@ -195,7 +184,6 @@ export const useProfile = () => {
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Save error:', err); // Debug log
       setError(err.message || 'Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
@@ -203,7 +191,6 @@ export const useProfile = () => {
   };
 
   const handleCancel = () => {
-    console.log('Canceling changes, reverting to:', originalProfile); // Debug log
     setProfile({ ...originalProfile });
     setHasChanges(false);
     setEditing(false);

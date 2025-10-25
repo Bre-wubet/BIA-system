@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
 //import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -10,6 +12,9 @@ dotenv.config();
 import logger from './config/logger.js';
 import database from './config/db.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Routes
 import authRoutes from './routes/authRoutes.js';
@@ -36,15 +41,14 @@ async function createServer() {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           scriptSrc: ["'self'"],
-          imgSrc: ["'self'", "data:", "https:"],
+          imgSrc: ["'self'", "data:", "https:", "http://localhost:3000"],
         },
       },
     })
   );
 
   const allowedOrigins = [
-    process.env.CORS_ORIGIN || 'http://localhost:5173',
-    'http://localhost:3000'
+    process.env.CORS_ORIGIN || 'http://localhost:5173'
   ];
   app.use(cors({
     origin: function(origin, callback) {
@@ -86,8 +90,22 @@ async function createServer() {
     next();
   });
 
-  // Serve static files (uploaded images)
-  app.use('/uploads', express.static('uploads'));
+  // Serve static files (uploaded images) with CORS headers
+  app.use('/uploads', (req, res, next) => {
+    // Set CORS headers for image requests
+    res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+    
+    next();
+  }, express.static('uploads'));
 
   // Health Check
   app.get('/health', async (req, res) => {

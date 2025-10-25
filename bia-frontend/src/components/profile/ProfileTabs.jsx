@@ -26,14 +26,6 @@ const ProfileTabs = ({
   return (
     <Card>
       <div className="p-6">
-        {editing && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-              <span className="text-sm text-blue-700 font-medium">Editing Mode Active</span>
-            </div>
-          </div>
-        )}
         <div className="flex flex-wrap gap-2 mb-6">
           {tabs.map((tab) => (
             <Button

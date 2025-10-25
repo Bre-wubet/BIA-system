@@ -46,6 +46,21 @@ const DashboardLayout = () => {
     return 'User';
   };
 
+  // Utility function to get profile image URL
+  const getProfileImageUrl = (avatar) => {
+    if (!avatar) return null;
+    if (avatar.startsWith('http')) return avatar;
+    return `http://localhost:3000${avatar}`;
+  };
+
+  // Handle image load error
+  const handleImageError = (e) => {
+    e.target.style.display = 'none';
+    if (e.target.nextSibling) {
+      e.target.nextSibling.style.display = 'block';
+    }
+  };
+
   const userPermissions = ROLE_PERMISSIONS[user?.role] || {};
   const filteredNavigationItems = NAVIGATION_ITEMS.filter(item => 
     item.roles.includes(user?.role)
@@ -178,10 +193,24 @@ const DashboardLayout = () => {
           {/* User Info */}
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                {user?.avatar ? (
+                  <>
+                    <img 
+                      src={getProfileImageUrl(user.avatar)} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                      onError={handleImageError}
+                    />
+                    <svg className="w-6 h-6 text-gray-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </>
+                ) : (
+                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                )}
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-900">
@@ -495,8 +524,20 @@ const DashboardLayout = () => {
                     className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
                     <span className="sr-only">Open user menu</span>
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <MdPerson className="w-5 h-5 text-white" />
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                      {user?.avatar ? (
+                        <>
+                          <img 
+                            src={getProfileImageUrl(user.avatar)} 
+                            alt="Profile" 
+                            className="w-full h-full object-cover"
+                            onError={handleImageError}
+                          />
+                          <MdPerson className="w-5 h-5 text-white hidden" />
+                        </>
+                      ) : (
+                        <MdPerson className="w-5 h-5 text-white" />
+                      )}
                     </div>
                     <MdKeyboardArrowDown className={`w-4 h-4 ml-1 text-gray-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -507,8 +548,20 @@ const DashboardLayout = () => {
                   <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                     <div className="p-4 border-b border-gray-200">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                          <MdPerson className="w-6 h-6 text-white" />
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                          {user?.avatar ? (
+                            <>
+                              <img 
+                                src={getProfileImageUrl(user.avatar)} 
+                                alt="Profile" 
+                                className="w-full h-full object-cover"
+                                onError={handleImageError}
+                              />
+                              <MdPerson className="w-6 h-6 text-white hidden" />
+                            </>
+                          ) : (
+                            <MdPerson className="w-6 h-6 text-white" />
+                          )}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
