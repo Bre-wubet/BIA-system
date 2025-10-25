@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '../components/ui/Button';
+import Button from '../../components/ui/Button';
 import { MdAccountCircle, MdUpload, MdDelete } from 'react-icons/md';
 
 const ProfilePictureSection = ({ 

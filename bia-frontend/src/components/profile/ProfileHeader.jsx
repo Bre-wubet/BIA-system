@@ -1,7 +1,7 @@
 import React from 'react';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
-import Tooltip from '../components/ui/Tooltip';
+import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
+import Tooltip from '../../components/ui/Tooltip';
 import { 
   MdAccountCircle, 
   MdEdit, 

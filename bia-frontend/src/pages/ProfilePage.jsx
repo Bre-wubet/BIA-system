@@ -102,13 +102,29 @@ const ProfilePage = () => {
 
   return (
     <div className="space-y-6">
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h4 className="font-semibold text-yellow-800 mb-2">Debug Info:</h4>
+          <div className="text-sm text-yellow-700">
+            <p>Editing: {editing ? 'Yes' : 'No'}</p>
+            <p>Has Changes: {hasChanges ? 'Yes' : 'No'}</p>
+            <p>Saving: {saving ? 'Yes' : 'No'}</p>
+            <p>Active Tab: {activeTab}</p>
+            <p>User: {user ? user.username : 'Not loaded'}</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <ProfileHeader
         profile={profile}
         user={user}
         editing={editing}
         saving={saving}
+        hasChanges={hasChanges}
         imagePreview={imagePreview}
+        imageFile={imageFile}
         onEdit={() => setEditing(true)}
         onSave={handleSave}
         onCancel={handleCancel}
@@ -129,6 +145,7 @@ const ProfilePage = () => {
       <ProfileTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        editing={editing}
       >
         {renderTabContent()}
       </ProfileTabs>
