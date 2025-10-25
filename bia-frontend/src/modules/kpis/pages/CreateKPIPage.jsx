@@ -49,7 +49,6 @@ useEffect(() => {
         Array.isArray(dsRes) ? dsRes : dsRes?.data || []
       );
     } catch (err) {
-      console.error("Error loading dropdown data", err);
       setDashboards([]); 
       setDataSources([]); // fallback to empty arrays
     }
@@ -82,7 +81,6 @@ useEffect(() => {
     await createKPI(payload);
       setSuccessModal(true);
     } catch (err) {
-   console.error("Error creating KPI:", err);
 
   // Normalize error to string
   const message =
@@ -270,13 +268,13 @@ useEffect(() => {
       </Card>
 
       {/* Success Modal */}
-      <Modal isOpen={successModal} onClose={() => navigate("/kpis")}>
+      <Modal isOpen={successModal} onClose={() => navigate("/dashboard/kpis")}>
         <h3 className="text-lg font-bold">KPI Created</h3>
         <p>Your KPI has been successfully created.</p>
         <Button
           variant="primary"
           size="md"
-          onClick={() => navigate("/kpis")}
+          onClick={() => navigate("/dashboard/kpis")}
         >
           Go to KPIs
         </Button>

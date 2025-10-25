@@ -88,7 +88,6 @@ const EditKPIPage = () => {
       setDataSources(Array.isArray(dsRes) ? dsRes : dsRes?.data || []);
       setError(null);
     } catch (err) {
-      console.error('Error loading KPI data:', err);
       setError('Failed to load KPI data. Please try again.');
     } finally {
       setLoading(false);
@@ -182,7 +181,6 @@ const EditKPIPage = () => {
         setSuccess(false);
       }, 2000);
     } catch (err) {
-      console.error('Error updating KPI:', err);
       const message = err?.message || err?.error || 
         (err?.errors ? Object.values(err.errors).join(', ') : 'Failed to update KPI');
       setError(message);
@@ -213,9 +211,8 @@ const EditKPIPage = () => {
   const handleDelete = async () => {
     try {
       // This would call deleteKPI API
-      navigate('/kpis');
+      navigate('/dashboard/kpis');
     } catch (err) {
-      console.error('Error deleting KPI:', err);
       setError('Failed to delete KPI. Please try again.');
     }
   };
@@ -263,7 +260,7 @@ const EditKPIPage = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading KPI</h2>
             <p className="text-gray-600 mb-4">{error}</p>
             <Button
-              onClick={() => navigate('/kpis')}
+              onClick={() => navigate('/dashboard/kpis')}
               variant="outline"
               className="flex items-center space-x-2"
             >
@@ -305,7 +302,7 @@ const EditKPIPage = () => {
         
         <div className="flex space-x-2">
           <Button
-            onClick={() => navigate('/kpis')}
+            onClick={() => navigate('/dashboard/kpis')}
             variant="outline"
             className="flex items-center space-x-2"
           >
@@ -588,7 +585,7 @@ const EditKPIPage = () => {
             <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
               <Button
                 type="button"
-                onClick={() => navigate('/kpis')}
+                onClick={() => navigate('/dashboard/kpis')}
                 variant="outline"
                 className="flex items-center space-x-2"
               >

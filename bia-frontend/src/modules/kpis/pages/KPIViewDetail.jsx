@@ -93,7 +93,6 @@ export default function KpiViewDetails() {
         fetchPredictions()
       ]);
     } catch (err) {
-      console.error("Error fetching KPI data:", err);
       setError("Failed to load KPI details.");
     } finally {
       setLoading(false);
@@ -105,7 +104,6 @@ export default function KpiViewDetails() {
       const kpiRes = await getKPIById(id);
       setKpi(kpiRes.data || kpiRes);
     } catch (err) {
-      console.error("Error fetching KPI details:", err);
       throw err;
     }
   };
@@ -115,7 +113,6 @@ export default function KpiViewDetails() {
       const historyRes = await getKPIValuesHistory(id, 100);
       setHistory(Array.isArray(historyRes) ? historyRes : []);
     } catch (err) {
-      console.error("Error fetching KPI history:", err);
       throw err;
     }
   };
@@ -125,7 +122,6 @@ export default function KpiViewDetails() {
       const latestRes = await getKPILatestValue(id);
       setLatest(latestRes?.data || latestRes);
     } catch (err) {
-      console.error("Error fetching latest value:", err);
       throw err;
     }
   };
@@ -135,7 +131,6 @@ export default function KpiViewDetails() {
       const data = await getKPIAnalytics();
       setAnalytics(data || {});
     } catch (err) {
-      console.error("Error fetching analytics:", err);
     }
   };
 
@@ -144,7 +139,6 @@ export default function KpiViewDetails() {
       const data = await getKPIAlerts();
       setAlerts(data || []);
     } catch (err) {
-      console.error("Error fetching alerts:", err);
     }
   };
 
@@ -153,7 +147,6 @@ export default function KpiViewDetails() {
       const data = await getKPIPredictions();
       setPredictions(data || {});
     } catch (err) {
-      console.error("Error fetching predictions:", err);
     }
   };
 
@@ -178,7 +171,6 @@ export default function KpiViewDetails() {
       await fetchLatestValue();
       await fetchKPIHistory();
     } catch (err) {
-      console.error("Error calculating KPI:", err);
     }
   };
 
@@ -190,7 +182,6 @@ export default function KpiViewDetails() {
 
   const handleExport = () => {
     // Implement export functionality
-    console.log("Export KPI data");
   };
 
   const formatNumber = (num) =>
@@ -313,7 +304,7 @@ export default function KpiViewDetails() {
         title="KPI Not Found"
         description="The requested KPI could not be found or you don't have permission to view it."
         action={
-          <Button onClick={() => navigate('/kpis')} variant="primary">
+          <Button onClick={() => navigate('/dashboard/kpis')} variant="primary">
             Back to KPIs
           </Button>
         }
@@ -398,7 +389,7 @@ export default function KpiViewDetails() {
               </Button>
             </Tooltip>
             {ROLE_PERMISSIONS[userRole].canEdit && (
-              <Button onClick={() => navigate(`/kpis/${id}/edit`)} variant="primary" size="sm">
+              <Button onClick={() => navigate(`/dashboard/kpis/${id}/edit`)} variant="primary" size="sm">
                 <MdEdit className="w-4 h-4 mr-1" />
                 Edit
               </Button>
@@ -422,7 +413,7 @@ export default function KpiViewDetails() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/kpis/alerts')}
+              onClick={() => navigate('/dashboard/kpis/alerts')}
               className="w-full"
             >
               View All {alerts.length} Alerts

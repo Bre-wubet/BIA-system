@@ -112,8 +112,6 @@ const KPIsPage = () => {
       setLoading(true);
       const res = await getAllKPIs();
       setKpis(res.data || []);
-    } catch (error) {
-      console.error('Error fetching KPIs:', error);
     } finally {
       setLoading(false);
     }
@@ -124,7 +122,7 @@ const KPIsPage = () => {
       const data = await getKPIStats();
       setStats(data || {});
     } catch (error) {
-      console.error('Error fetching KPI stats:', error);
+      // Error fetching KPI stats
     }
   };
 
@@ -134,7 +132,7 @@ const KPIsPage = () => {
       const data = await getKPIAnalytics();
       setAnalytics(data || {});
     } catch (error) {
-      console.error('Error fetching KPI analytics:', error);
+      // Error fetching KPI analytics
     }
   };
 
@@ -144,7 +142,7 @@ const KPIsPage = () => {
       const data = await getKPIPredictions();
       setPredictions(data || {});
     } catch (error) {
-      console.error('Error fetching KPI predictions:', error);
+      // Error fetching KPI predictions
     }
   };
 
@@ -154,7 +152,7 @@ const KPIsPage = () => {
       const data = await getKPIAlerts();
       setAlerts(data || []);
     } catch (error) {
-      console.error('Error fetching KPI alerts:', error);
+      // Error fetching KPI alerts
     }
   };
 
@@ -180,12 +178,10 @@ const fetchKPIValuesHistory = async () => {
       kpis.map(async (kpi) => {
         try {
           const res = await getKPIValuesHistory(kpi.id, 50);
-          console.log("History for KPI", kpi.id, res);
           // ✅ res is already an array of rows, not an object with data
           const data = Array.isArray(res) ? res : [];
           return { kpiId: kpi.id, values: data };
         } catch (error) {
-          console.error(`Error fetching values history for KPI ${kpi.id}:`, error);
           return { kpiId: kpi.id, values: [] };
         }
       })
@@ -198,7 +194,7 @@ const fetchKPIValuesHistory = async () => {
 
     setKpiHistory(historyMap);
   } catch (error) {
-    console.error('Error fetching KPI values history:', error);
+    // Error fetching KPI values history
   }
 };
 
@@ -211,7 +207,6 @@ const fetchKPIValuesHistory = async () => {
             const res = await getKPILatestValue(kpi.id);
             return { kpiId: kpi.id, latest: res?.data || null };
           } catch (error) {
-            console.error(`Error fetching latest value for KPI ${kpi.id}:`, error);
             return { kpiId: kpi.id, latest: null };
           }
         })
@@ -224,7 +219,7 @@ const fetchKPIValuesHistory = async () => {
 
       setKpiLatest(latestMap);
     } catch (error) {
-      console.error('Error fetching latest KPI values:', error);
+      // Error fetching latest KPI values
     }
   };
   const handleCalculateKPI = async (kpiId) => {
@@ -233,7 +228,7 @@ const fetchKPIValuesHistory = async () => {
       await fetchKPIValuesHistory();
       await fetchKPIStats();
     } catch (error) {
-      console.error('Error calculating KPI:', error);
+      // Error calculating KPI
     }
   };
 
@@ -243,7 +238,7 @@ const fetchKPIValuesHistory = async () => {
       await fetchKPIValuesHistory();
       await fetchKPIStats();
     } catch (error) {
-      console.error('Error batch calculating KPIs:', error);
+      // Error batch calculating KPIs
     }
   };
 
@@ -466,7 +461,7 @@ const fetchKPIValuesHistory = async () => {
               </Button>
             </Tooltip>
             {ROLE_PERMISSIONS[userRole].canCreate && (
-              <Button onClick={() => navigate(`/kpis/new-kpi`)} variant="success">
+              <Button onClick={() => navigate(`/dashboard/kpis/new-kpi`)} variant="success">
                 <MdAdd className="w-4 h-4 mr-2" />
                 New KPI
               </Button>
@@ -495,7 +490,7 @@ const fetchKPIValuesHistory = async () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/kpis/alerts')}
+              onClick={() => navigate('/dashboard/kpis/alerts')}
               className="w-full"
             >
               View All {alerts.length} Alerts
@@ -858,7 +853,7 @@ const fetchKPIValuesHistory = async () => {
                       {ROLE_PERMISSIONS[userRole].canEdit && (
                         <Tooltip content="Edit KPI">
                           <Button
-                            onClick={() => navigate(`/kpis/${kpi.id}/edit`)}
+                            onClick={() => navigate(`/dashboard/kpis/${kpi.id}/edit`)}
                             variant="outline"
                             size="sm"
                           >
@@ -868,7 +863,7 @@ const fetchKPIValuesHistory = async () => {
                       )}
                     </div>
                     <Button
-                      onClick={() => navigate(`/kpis/${kpi.id}/detail`)}
+                      onClick={() => navigate(`/dashboard/kpis/${kpi.id}/detail`)}
                       variant="primary"
                       size="sm"
                     >
@@ -945,7 +940,7 @@ const fetchKPIValuesHistory = async () => {
                         Calculate
                       </Button>
                       <Button
-                        onClick={() => navigate(`/kpis/${kpi.id}/detail`)}
+                        onClick={() => navigate(`/dashboard/kpis/${kpi.id}/detail`)}
                         variant="primary"
                         size="sm"
                       >
@@ -972,7 +967,7 @@ const fetchKPIValuesHistory = async () => {
           }
           action={
             ROLE_PERMISSIONS[userRole].canCreate && (
-              <Button onClick={() => navigate('/kpis/new-kpi')} variant="primary">
+              <Button onClick={() => navigate('/dashboard/kpis/new-kpi')} variant="primary">
                 Create KPI
               </Button>
             )
