@@ -251,8 +251,8 @@ const ReportsPage = () => {
             <ReportCard
               key={report.id}
               report={report}
-              onEdit={() => navigate(`/reports/${report.id}/edit`)}
-              onView={() => navigate(`/reports/${report.id}`)}
+              onEdit={() => navigate(`/dashboard/reports/${report.id}/edit`)}
+              onView={() => navigate(`/dashboard/reports/${report.id}`)}
               onDelete={() => handleDeleteReport(report.id)}
               onDuplicate={() => handleDuplicateReport(report.id)}
               onSchedule={(scheduleData) => handleScheduleReport(report.id, scheduleData)}
@@ -312,7 +312,7 @@ const ReportsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <Button
-                          onClick={() => navigate(`/reports/${report.id}`)}
+                          onClick={() => navigate(`/dashboard/reports/${report.id}`)}
                           variant="outline"
                           size="sm"
                         >
@@ -320,7 +320,7 @@ const ReportsPage = () => {
                         </Button>
                         {ROLE_PERMISSIONS[userRole].canEdit && (
                           <Button
-                            onClick={() => navigate(`/reports/${report.id}/edit`)}
+                            onClick={() => navigate(`/dashboard/reports/${report.id}/edit`)}
                             variant="outline"
                             size="sm"
                           >
@@ -385,7 +385,7 @@ const ReportsPage = () => {
             </Button>
             <Button 
               variant="primary"
-              onClick={() => navigate('/reports/new')}
+              onClick={() => navigate('/dashboard/reports/new')}
             >
               Continue
             </Button>

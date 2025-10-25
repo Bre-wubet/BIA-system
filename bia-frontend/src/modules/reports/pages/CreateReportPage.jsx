@@ -134,7 +134,7 @@ const CreateReportPage = () => {
     try {
       setLoading(true);
       await createReport(reportData);
-      navigate('/reports');
+      navigate('/dashboard/reports');
     } catch (error) {
       console.error('Error creating report:', error);
     } finally {
@@ -797,7 +797,7 @@ const CreateReportPage = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button
-            onClick={() => navigate('/reports')}
+            onClick={() => navigate('/dashboard/reports')}
             variant="outline"
             size="sm"
           >

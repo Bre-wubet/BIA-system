@@ -118,7 +118,7 @@ const ReportDetailPage = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button
-            onClick={() => navigate('/reports')}
+            onClick={() => navigate('/dashboard/reports')}
             variant="outline"
             size="sm"
           >
@@ -165,7 +165,7 @@ const ReportDetailPage = () => {
           </div>
           {ROLE_PERMISSIONS[userRole].canEdit && (
             <Button
-              onClick={() => navigate(`/reports/${id}/edit`)}
+              onClick={() => navigate(`/dashboard/reports/${id}/edit`)}
               variant="outline"
             >
               <MdEdit className="w-4 h-4 mr-2" />
@@ -227,7 +227,7 @@ const ReportDetailPage = () => {
               Share
             </Button>
             <Button
-              onClick={() => navigate(`/reports/new?template=${id}`)}
+              onClick={() => navigate(`/dashboard/reports/new?template=${id}`)}
               variant="outline"
             >
               <MdContentCopy className="w-4 h-4 mr-2" />

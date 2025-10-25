@@ -33,7 +33,7 @@ const ReportTemplatesPage = () => {
   const handleCreateFromTemplate = async (templateId) => {
     try {
       const res = await createReportFromTemplate(templateId);
-      navigate(`/reports/${res.data.id}/edit`);
+      navigate(`/dashboard/reports/${res.data.id}/edit`);
     } catch (error) {
       console.error('Error creating report from template:', error);
     }
@@ -85,7 +85,7 @@ const ReportTemplatesPage = () => {
           <h1 className="text-2xl font-bold text-blue-900">Report Templates</h1>
           <p className="text-gray-600">Choose from pre-built report templates</p>
         </div>
-        <Button onClick={() => navigate('/reports/new')} variant="primary">
+        <Button onClick={() => navigate('/dashboard/reports/new')} variant="primary">
           <MdAdd className="w-4 h-4 mr-2" />
           Create Custom Report
         </Button>
@@ -169,7 +169,7 @@ const ReportTemplatesPage = () => {
                   Use Template
                 </Button>
                 <Button
-                  onClick={() => navigate(`/reports/templates/${template.id}`)}
+                  onClick={() => navigate(`/dashboard/reports/templates/${template.id}`)}
                   variant="outline"
                   size="sm"
                 >

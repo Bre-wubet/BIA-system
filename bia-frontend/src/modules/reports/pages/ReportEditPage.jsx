@@ -35,7 +35,7 @@ const ReportEditPage = () => {
     try {
       setSaving(true);
       await updateReport(id, report);
-      navigate(`/reports/${id}`);
+      navigate(`/dashboard/reports/${id}`);
     } catch (error) {
       console.error('Error updating report:', error);
     } finally {
@@ -234,7 +234,7 @@ const ReportEditPage = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button
-            onClick={() => navigate(`/reports/${id}`)}
+            onClick={() => navigate(`/dashboard/reports/${id}`)}
             variant="outline"
             size="sm"
           >
