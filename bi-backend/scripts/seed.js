@@ -54,22 +54,75 @@ async function seedTables() {
 
       ///////////////////////////////////
        
-      await database.query(`
-        INSERT INTO suppliers (supplier_id, name, rating, status, address)
-          VALUES
-        (15, 'Global Metals Ltd.',       4.7, 'active',   '123 Industrial Zone, Addis Ababa, Ethiopia'),
-        (16, 'East Africa Plastics Co.', 4.2, 'active',   '456 Manufacturing Rd, Nairobi, Kenya'),
-        (17, 'TransNational Textiles',   3.9, 'inactive', '789 Export Ave, Dar es Salaam, Tanzania'),
-        (18, 'Prime Chemicals PLC',      4.5, 'active',   '321 Chemical Park, Cairo, Egypt');
+      // await database.query(`
+      //   INSERT INTO suppliers (supplier_id, name, rating, status, address)
+      //     VALUES
+      //   (15, 'Global Metals Ltd.',       4.7, 'active',   '123 Industrial Zone, Addis Ababa, Ethiopia'),
+      //   (16, 'East Africa Plastics Co.', 4.2, 'active',   '456 Manufacturing Rd, Nairobi, Kenya'),
+      //   (17, 'TransNational Textiles',   3.9, 'inactive', '789 Export Ave, Dar es Salaam, Tanzania'),
+      //   (18, 'Prime Chemicals PLC',      4.5, 'active',   '321 Chemical Park, Cairo, Egypt');
 
-        INSERT INTO products (name, sku, category, unit, product_type, description, status)
-          VALUES
-        ('Steel Rod', 'STL-506', 'Raw Materials', 'kg', 'raw_material', 'High-quality steel rods for manufacturing', 'active'),
-        ('Copper Wire', 'COP-502', 'Raw Materials', 'm', 'raw_material', 'Copper wiring for electrical components', 'active'),
-        ('Plastic Granules', 'PLS-503', 'Raw Materials', 'kg', 'raw_material', 'Plastic raw material for molding', 'active'),
-        ('LED TV 42-inch', 'TV-504', 'Electronics', 'pcs', 'finished_good', '42-inch LED television with smart features', 'active'),
-        ('Wireless Mouse', 'MOU-505', 'Electronics', 'pcs', 'finished_good', 'Ergonomic wireless mouse with USB receiver', 'active');
-        `)
+      //   INSERT INTO products (name, sku, category, unit, product_type, description, status)
+      //     VALUES
+      //   ('Steel Rod', 'STL-506', 'Raw Materials', 'kg', 'raw_material', 'High-quality steel rods for manufacturing', 'active'),
+      //   ('Copper Wire', 'COP-502', 'Raw Materials', 'm', 'raw_material', 'Copper wiring for electrical components', 'active'),
+      //   ('Plastic Granules', 'PLS-503', 'Raw Materials', 'kg', 'raw_material', 'Plastic raw material for molding', 'active'),
+      //   ('LED TV 42-inch', 'TV-504', 'Electronics', 'pcs', 'finished_good', '42-inch LED television with smart features', 'active'),
+      //   ('Wireless Mouse', 'MOU-505', 'Electronics', 'pcs', 'finished_good', 'Ergonomic wireless mouse with USB receiver', 'active');
+      //   `)
+
+      await database.query(`
+        INSERT INTO users (
+  username, email, password, first_name, last_name, role, department, is_active, email_verified
+) VALUES (
+  'admin',
+  'admin@bi-analytics.com',
+  'admin123', -- password: admin123
+  'System',
+  'Administrator',
+  'admin',
+  'IT',
+  true,
+  true
+)`),
+// await database.query(`
+//   INSERT INTO users (
+//     username, email, password, first_name, last_name, role, department, is_active, email_verified
+//   ) VALUES
+//   (
+//   'analyst1',
+//   'analyst1@bi-analytics.com',
+//   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- password: analyst123
+//   'John',
+//   'Analyst',
+//   'analyst',
+//   'Analytics',
+//   true,
+//   true
+// ),
+// (
+//   'manager1',
+//   'manager1@bi-analytics.com',
+//   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- password: manager123
+//   'Jane',
+//   'Manager',
+//   'manager',
+//   'Operations',
+//   true,
+//   true
+// ),
+// (
+//   'user1',
+//   'user1@bi-analytics.com',
+//   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- password: user123
+//   'Bob',
+//   'User',
+//   'user',
+//   'Sales',
+//   true,
+//   true
+// )`)
+
         // INSERT INTO purchase_orders (po_id, supplier_id, created_at, total_amount, status) VALUES
         //           (1007, 1, '2025-09-09 16:40:00', 2750.00, 'rejected'),
         //   (1008, 1, '2025-09-10 08:10:00', 6400.00, 'approved'),

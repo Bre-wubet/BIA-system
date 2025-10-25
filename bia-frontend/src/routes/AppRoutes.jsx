@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import { ROLES } from '../constants/roles';
+import { useAuth } from '../hooks/useAuth';
 import DashboardLayout from '../layouts/DashboardLayout';
 import OverviewPage from '../modules/dashboards/pages/OverviewPage';
 
@@ -40,15 +41,20 @@ import CreateExportPage from '../modules/export/pages/CreateExportPage';
 import ExportDetailPage from '../modules/export/pages/ExportDetailPage';
 import ExportHistoryPage from '../modules/export/pages/ExportHistoryPage';
 import ExportTemplatesPage from '../modules/export/pages/ExportTemplatesPage';
-// Mock authentication context - in real app, this would come from AuthContext
-const useAuth = () => ({
-  user: { role: ROLES.ADMIN, id: 1 },
-  isAuthenticated: true
-});
+
+// Auth Pages
+import LoginPage from '../pages/LoginPage';
+import RegisterPage from '../pages/RegisterPage';
 
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+    </div>;
+  }
   
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} replace />;
@@ -66,8 +72,8 @@ const AppRoutes = () => {
 
       <Routes>
         {/* Public Routes */}
-        <Route path={ROUTES.LOGIN} element={<div>Login Page</div>} />
-        <Route path={ROUTES.REGISTER} element={<div>Register Page</div>} />
+        <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+        <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
         
         {/* Protected Routes */}
         <Route path="/" element={

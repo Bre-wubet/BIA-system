@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { NAVIGATION_ITEMS, ROUTES } from '../constants/routes';
 import { ROLES, ROLE_PERMISSIONS } from '../constants/roles';
 import Button from '../components/ui/Button';
@@ -25,7 +26,7 @@ const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [userRole] = useState(ROLES.ADMIN); // Mock user role
+  const { user, logout } = useAuth();
   const [notifications] = useState([
     { id: 1, title: 'New KPI Alert', message: 'Revenue target exceeded by 15%', time: '2 min ago', type: 'success' },
     { id: 2, title: 'System Update', message: 'Scheduled maintenance tonight at 2 AM', time: '1 hour ago', type: 'info' },
@@ -37,9 +38,9 @@ const DashboardLayout = () => {
   const userMenuRef = useRef(null);
   const notificationsRef = useRef(null);
 
-  const userPermissions = ROLE_PERMISSIONS[userRole] || {};
+  const userPermissions = ROLE_PERMISSIONS[user?.role] || {};
   const filteredNavigationItems = NAVIGATION_ITEMS.filter(item => 
-    item.roles.includes(userRole)
+    item.roles.includes(user?.role)
   );
 
   // Close dropdowns when clicking outside
@@ -70,10 +71,15 @@ const DashboardLayout = () => {
     setUserMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    // Implement logout logic
-    console.log('Logout clicked');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate(ROUTES.LOGIN);
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still navigate to login even if logout fails
+      navigate(ROUTES.LOGIN);
+    }
   };
 
   const handleSettings = () => {
@@ -492,8 +498,13 @@ const DashboardLayout = () => {
                           <MdPerson className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">Brie</p>
-                          <p className="text-xs text-gray-500">{userRole.replace('_', ' ')}</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {user?.first_name && user?.last_name 
+                              ? `${user.first_name} ${user.last_name}`
+                              : user?.username || 'User'
+                            }
+                          </p>
+                          <p className="text-xs text-gray-500">{user?.role || 'User'}</p>
                         </div>
                       </div>
                     </div>

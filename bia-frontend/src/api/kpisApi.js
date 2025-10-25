@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './authApi';
 
 const BASE_URL = 'http://localhost:3000/api';
 const apiPaths = {
@@ -22,7 +22,7 @@ const apiPaths = {
 // KPI CRUD operations
 export const createKPI = async (kpiData) => {
   try {
-    const response = await axios.post(apiPaths.KPIS, kpiData);
+    const response = await apiClient.post(apiPaths.KPIS, kpiData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -32,7 +32,7 @@ export const createKPI = async (kpiData) => {
 export const getAllKPIsByCategory = async (category = null) => {
   try {
     const url = category ? `${apiPaths.KPI_BY_CATEGORY(category)}` : apiPaths.KPIS;
-    const response = await axios.get(url);
+    const response = await apiClient.get(url);
     return response.data || [];
   } catch (error) {
     throw error.response?.data || error.message;
@@ -41,7 +41,7 @@ export const getAllKPIsByCategory = async (category = null) => {
 
 export const getKPIById = async (id) => {
   try {
-    const response = await axios.get(apiPaths.KPI_BY_ID(id));
+    const response = await apiClient.get(apiPaths.KPI_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -50,7 +50,7 @@ export const getKPIById = async (id) => {
 
 export const getAllKPIs = async () => {
   try {
-    const response = await axios.get(apiPaths.KPIS);
+    const response = await apiClient.get(apiPaths.KPIS);
     return response.data || [];
   } catch (error) {
     throw error.response?.data || error.message;
@@ -59,7 +59,7 @@ export const getAllKPIs = async () => {
 
 export const updateKPI = async (id, updateData) => {
   try {
-    const response = await axios.put(apiPaths.KPI_BY_ID(id), updateData);
+    const response = await apiClient.put(apiPaths.KPI_BY_ID(id), updateData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -68,7 +68,7 @@ export const updateKPI = async (id, updateData) => {
 
 export const deleteKPI = async (id) => {
   try {
-    const response = await axios.delete(apiPaths.KPI_BY_ID(id));
+    const response = await apiClient.delete(apiPaths.KPI_BY_ID(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -78,7 +78,7 @@ export const deleteKPI = async (id) => {
 // KPI categories and filtering
 export const getKPICategories = async () => {
   try {
-    const response = await axios.get(apiPaths.KPI_CATEGORIES);
+    const response = await apiClient.get(apiPaths.KPI_CATEGORIES);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -87,7 +87,7 @@ export const getKPICategories = async () => {
 
 export const getKPIsByCategory = async (category) => {
   try {
-    const response = await axios.get(apiPaths.KPI_BY_CATEGORY(category));
+    const response = await apiClient.get(apiPaths.KPI_BY_CATEGORY(category));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -96,7 +96,7 @@ export const getKPIsByCategory = async (category) => {
 
 export const getKPIsNeedingUpdate = async () => {
   try {
-    const response = await axios.get(apiPaths.KPI_NEEDING_UPDATE);
+    const response = await apiClient.get(apiPaths.KPI_NEEDING_UPDATE);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -105,7 +105,7 @@ export const getKPIsNeedingUpdate = async () => {
 
 export const getKPIStats = async () => {
   try {
-    const response = await axios.get(apiPaths.KPI_STATS);
+    const response = await apiClient.get(apiPaths.KPI_STATS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -115,7 +115,7 @@ export const getKPIStats = async () => {
 // KPI calculation and values
 export const calculateKPIValue = async (id, dataSourceId = null) => {
   try {
-    const response = await axios.post(apiPaths.KPI_CALCULATE(id), {
+    const response = await apiClient.post(apiPaths.KPI_CALCULATE(id), {
       data_source_id: dataSourceId
     });
     return response.data;
@@ -126,7 +126,7 @@ export const calculateKPIValue = async (id, dataSourceId = null) => {
 
 export const getKPILatestValue = async (id, limit = 100) => {
   try {
-    const response = await axios.get(apiPaths.KPI_LATEST_VALUE(id));
+    const response = await apiClient.get(apiPaths.KPI_LATEST_VALUE(id));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -134,7 +134,7 @@ export const getKPILatestValue = async (id, limit = 100) => {
 };
 export const getKPIValuesHistory = async (id, limit = 100) => {
   try {
-    const response = await axios.get(apiPaths.KPI_VALUES_HISTORY(id), {
+    const response = await apiClient.get(apiPaths.KPI_VALUES_HISTORY(id), {
       params: { limit }
     });
     return response.data;
@@ -145,7 +145,7 @@ export const getKPIValuesHistory = async (id, limit = 100) => {
 // Batch operations
 export const batchCalculateKPIs = async () => {
   try {
-    const response = await axios.post(apiPaths.BATCH_CALCULATE);
+    const response = await apiClient.post(apiPaths.BATCH_CALCULATE);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -155,7 +155,7 @@ export const batchCalculateKPIs = async () => {
 // KPI Analytics
 export const getKPIAnalytics = async () => {
   try {
-    const response = await axios.get(apiPaths.KPI_ANALYTICS);
+    const response = await apiClient.get(apiPaths.KPI_ANALYTICS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -165,7 +165,7 @@ export const getKPIAnalytics = async () => {
 // KPI Predictions
 export const getKPIPredictions = async () => {
   try {
-    const response = await axios.get(apiPaths.KPI_PREDICTIONS);
+    const response = await apiClient.get(apiPaths.KPI_PREDICTIONS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -175,7 +175,7 @@ export const getKPIPredictions = async () => {
 // KPI Alerts
 export const getKPIAlerts = async () => {
   try {
-    const response = await axios.get(apiPaths.KPI_ALERTS);
+    const response = await apiClient.get(apiPaths.KPI_ALERTS);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

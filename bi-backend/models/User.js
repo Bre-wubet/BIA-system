@@ -75,7 +75,7 @@ async function createUser(userData) {
   ];
 
   const result = await database.query(sql, values);
-  return result[0];
+  return result.rows[0];
 }
 
 /**
@@ -84,7 +84,7 @@ async function createUser(userData) {
 async function findById(id) {
   const sql = `SELECT * FROM ${tableName} WHERE id = $1`;
   const result = await database.query(sql, [id]);
-  return result[0] || null;
+  return result.rows[0] || null;
 }
 
 /**
@@ -93,7 +93,7 @@ async function findById(id) {
 async function findByEmail(email) {
   const sql = `SELECT * FROM ${tableName} WHERE email = $1`;
   const result = await database.query(sql, [email]);
-  return result[0] || null;
+  return result.rows[0] || null;
 }
 
 /**
@@ -102,7 +102,7 @@ async function findByEmail(email) {
 async function findByUsername(username) {
   const sql = `SELECT * FROM ${tableName} WHERE username = $1`;
   const result = await database.query(sql, [username]);
-  return result[0] || null;
+  return result.rows[0] || null;
 }
 
 /**
@@ -141,7 +141,7 @@ async function update(id, updateData) {
   values.push(id);
   
   const result = await database.query(sql, values);
-  return result[0] || null;
+  return result.rows[0] || null;
 }
 
 /**
@@ -156,7 +156,7 @@ async function updatePassword(id, hashedPassword) {
   `;
   
   const result = await database.query(sql, [hashedPassword, id]);
-  return result[0] || null;
+  return result.rows[0] || null;
 }
 
 /**
@@ -184,7 +184,7 @@ async function deactivate(id) {
   `;
   
   const result = await database.query(sql, [id]);
-  return result[0] || null;
+  return result.rows[0] || null;
 }
 
 /**
@@ -199,7 +199,7 @@ async function activate(id) {
   `;
   
   const result = await database.query(sql, [id]);
-  return result[0] || null;
+  return result.rows[0] || null;
 }
 
 /**
@@ -256,7 +256,7 @@ async function getAllUsers(options = {}) {
   // Count total records
   const countSql = `SELECT COUNT(*) as total FROM ${tableName} ${whereClause}`;
   const countResult = await database.query(countSql, values);
-  const total = parseInt(countResult[0].total);
+  const total = parseInt(countResult.rows[0].total);
 
   // Get paginated results
   const offset = (page - 1) * limit;
@@ -275,7 +275,7 @@ async function getAllUsers(options = {}) {
   const result = await database.query(sql, values);
 
   return {
-    users: result,
+    users: result.rows,
     pagination: {
       page,
       limit,
@@ -299,7 +299,7 @@ async function getUserStats() {
   `;
   
   const result = await database.query(sql);
-  return result[0];
+  return result.rows[0];
 }
 
 /**
@@ -308,7 +308,7 @@ async function getUserStats() {
 async function getUsersByRole(role) {
   const sql = `SELECT * FROM ${tableName} WHERE role = $1 AND is_active = true ORDER BY username`;
   const result = await database.query(sql, [role]);
-  return result;
+  return result.rows || [];
 }
 
 /**
@@ -317,7 +317,7 @@ async function getUsersByRole(role) {
 async function getUsersByDepartment(department) {
   const sql = `SELECT * FROM ${tableName} WHERE department = $1 AND is_active = true ORDER BY username`;
   const result = await database.query(sql, [department]);
-  return result;
+  return result.rows || [];
 }
 
 export default {

@@ -2,7 +2,9 @@ export const ROLES = {
   ADMIN: 'admin',
   MANAGER: 'manager',
   ANALYST: 'analyst',
-  VIEWER: 'viewer',
+  USER: 'user',
+  // Legacy roles for backward compatibility
+  VIEWER: 'user',
   SALES: 'sales_manager',
   HR: 'hr_manager',
   FINANCE: 'finance_manager',
@@ -36,13 +38,22 @@ export const ROLE_PERMISSIONS = {
     canShare: false,
     canExport: true
   },
+  [ROLES.USER]: {
+    canCreate: false,
+    canEdit: false,
+    canDelete: false,
+    canView: true,
+    canShare: false,
+    canExport: false
+  },
+  // Legacy role mappings
   [ROLES.VIEWER]: {
     canCreate: false,
     canEdit: false,
     canDelete: false,
     canView: true,
     canShare: false,
-    canExport: false // can be true if "report download" is allowed
+    canExport: false
   },
   [ROLES.SALES]: {
     canCreate: true,
