@@ -1337,7 +1337,7 @@ ORDER BY i.current_stock ASC;`
                 View Data Sources
               </Button>
               <Button
-                onClick={() => navigate("/integration/new-source")}
+                onClick={() => navigate("/dashboard/integration/new-source")}
                 variant="outline"
               >
                 Create Another

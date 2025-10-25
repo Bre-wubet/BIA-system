@@ -1,6 +1,5 @@
 import database from '../config/db.js';
 import Dashboard from '../models/Dashboard.js';
-import DashboardWidget from '../models/DashboardWidget.js';
 import KPI from '../models/KPI.js';
 import logger from '../config/logger.js';
 
@@ -29,12 +28,12 @@ export async function getDashboardById(id) {
       return { success: false, message: 'Dashboard not found' };
     }
 
-    // Get widgets for this dashboard
-    const widgets = await DashboardWidget.findByDashboardId(id);
+    // Get KPIs for this dashboard
+    const kpis = await KPI.findByDashboardId(id);
     
     return { 
       success: true, 
-      data: { ...dashboard, widgets: widgets.rows || [] } 
+      data: { ...dashboard, kpis: kpis.rows || [] } 
     };
   } catch (error) {
     logger.error('Error getting dashboard:', error);
@@ -61,12 +60,12 @@ export async function getDefaultDashboard(userId) {
       return { success: false, message: 'No default dashboard found' };
     }
 
-    // Get widgets for this dashboard
-    const widgets = await DashboardWidget.findByDashboardId(dashboard.id);
+    // Get KPIs for this dashboard
+    const kpis = await KPI.findByDashboardId(dashboard.id);
     
     return { 
       success: true, 
-      data: { ...dashboard, widgets: widgets.rows || [] } 
+      data: { ...dashboard, kpis: kpis.rows || [] } 
     };
   } catch (error) {
     logger.error('Error getting default dashboard:', error);
@@ -121,12 +120,12 @@ export async function duplicateDashboard(id, userId, newName) {
 
     const duplicatedDashboard = await Dashboard.duplicate(id, userId, newName);
     
-    // Duplicate widgets
-    const originalWidgets = await DashboardWidget.findByDashboardId(id);
-    for (const widget of originalWidgets.rows || []) {
-      await DashboardWidget.createWidget({
-        ...widget,
-        id: undefined, // Remove ID to create new widget
+    // Duplicate KPIs
+    const originalKpis = await KPI.findByDashboardId(id);
+    for (const kpi of originalKpis.rows || []) {
+      await KPI.createKpi({
+        ...kpi,
+        id: undefined, // Remove ID to create new KPI
         dashboard_id: duplicatedDashboard.id,
         created_at: undefined,
         updated_at: undefined

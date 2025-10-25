@@ -48,7 +48,7 @@ class AuthService {
         updated_at: new Date()
       };
 
-      const user = await User.create(userDataToSave);
+      const user = await User.createUser(userDataToSave);
 
       // Generate tokens
       const tokens = await this.generateTokens(user.id);

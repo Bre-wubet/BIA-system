@@ -71,7 +71,7 @@ const DataSourceSyncHistory = ({ dataSourceId }) => {
     <div>
         <div className="flex space-x-2 mr-0">
             <button
-                onClick={() => navigate("/integration/sync-history")}
+                onClick={() => navigate("/dashboard/integration/sync-history")}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm flex items-center"
                 variant="outline"
             >

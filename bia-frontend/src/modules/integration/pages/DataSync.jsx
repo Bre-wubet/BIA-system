@@ -541,7 +541,7 @@ const DataSync = () => {
                           <span>Sync</span>
                         </Button>
                         <Button
-                          onClick={() => navigate(`/integration/view/${source.id}`)}
+                          onClick={() => navigate(`/dashboard/integration/view/${source.id}`)}
                           variant="outline"
                           size="sm"
                           className="flex items-center space-x-1"
@@ -621,7 +621,7 @@ const DataSync = () => {
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-900">Recent Sync History</h2>
           <Button
-            onClick={() => navigate('/integration/sync-history')}
+            onClick={() => navigate('/dashboard/integration/sync-history')}
             variant="outline"
             size="sm"
             className="flex items-center space-x-2"

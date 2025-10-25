@@ -71,57 +71,57 @@ async function seedTables() {
       //   ('Wireless Mouse', 'MOU-505', 'Electronics', 'pcs', 'finished_good', 'Ergonomic wireless mouse with USB receiver', 'active');
       //   `)
 
-      await database.query(`
-        INSERT INTO users (
-  username, email, password, first_name, last_name, role, department, is_active, email_verified
-) VALUES (
-  'admin',
-  'admin@bi-analytics.com',
-  'admin123', -- password: admin123
-  'System',
-  'Administrator',
-  'admin',
-  'IT',
+//       await database.query(`
+//         INSERT INTO users (
+//   username, email, password, first_name, last_name, role, department, is_active, email_verified
+// ) VALUES (
+//   'admin',
+//   'admin@bi-analytics.com',
+//   'admin123', -- password: admin123
+//   'System',
+//   'Administrator',
+//   'admin',
+//   'IT',
+//   true,
+//   true
+// )`),
+await database.query(`
+  INSERT INTO users (
+    username, email, password, first_name, last_name, role, department, is_active, email_verified
+  ) VALUES
+  (
+  'Brian',
+  'briecoder@gmail.com',
+  'Brie1192', -- password: analyst123
+  'Brian',
+  'Analyst',
+  'analyst',
+  'Analytics',
   true,
   true
-)`),
-// await database.query(`
-//   INSERT INTO users (
-//     username, email, password, first_name, last_name, role, department, is_active, email_verified
-//   ) VALUES
-//   (
-//   'analyst1',
-//   'analyst1@bi-analytics.com',
-//   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- password: analyst123
-//   'John',
-//   'Analyst',
-//   'analyst',
-//   'Analytics',
-//   true,
-//   true
-// ),
-// (
-//   'manager1',
-//   'manager1@bi-analytics.com',
-//   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- password: manager123
-//   'Jane',
-//   'Manager',
-//   'manager',
-//   'Operations',
-//   true,
-//   true
-// ),
-// (
-//   'user1',
-//   'user1@bi-analytics.com',
-//   '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- password: user123
-//   'Bob',
-//   'User',
-//   'user',
-//   'Sales',
-//   true,
-//   true
-// )`)
+),
+(
+  'manager1',
+  'manager1@bi-analytics.com',
+  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- password: manager123
+  'Jane',
+  'Manager',
+  'manager',
+  'Operations',
+  true,
+  true
+),
+(
+  'user1',
+  'user1@bi-analytics.com',
+  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- password: user123
+  'Bob',
+  'User',
+  'user',
+  'Sales',
+  true,
+  true
+)`)
 
         // INSERT INTO purchase_orders (po_id, supplier_id, created_at, total_amount, status) VALUES
         //           (1007, 1, '2025-09-09 16:40:00', 2750.00, 'rejected'),

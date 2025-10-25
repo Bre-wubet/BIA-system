@@ -271,7 +271,7 @@ const DataSourceList = () => {
         
         <div className="flex space-x-2">
           <button
-            onClick={() => navigate('/integration/new-source')}
+            onClick={() => navigate('/dashboard/integration/new-source')}
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm flex items-center"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -380,7 +380,7 @@ const DataSourceList = () => {
             <div>
               <p className="mb-4">No data sources found.</p>
               <button
-                onClick={() => navigate('/integration/new-source')}
+                onClick={() => navigate('/dashboard/integration/new-source')}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm inline-flex items-center"
               >
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -528,7 +528,7 @@ const DataSourceList = () => {
                         </svg>
                       </button>
                       <button
-                        onClick={() => navigate(`/integration/edit-source/${source.id}`)}
+                        onClick={() => navigate(`/dashboard/integration/edit-source/${source.id}`)}
                         className="text-blue-600 hover:text-blue-900"
                         title="Edit"
                       >

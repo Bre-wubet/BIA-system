@@ -496,7 +496,7 @@ import {
               </Button>
             </Tooltip>
             <Button
-              onClick={() => navigate("/integration/data-sync")}
+              onClick={() => navigate("/dashboard/dashboard/integration/data-sync")}
               variant="outline"
               size="sm"
             >
@@ -504,7 +504,7 @@ import {
               Data Sync
             </Button>
             <Button
-              onClick={() => navigate("/integration/import-export")}
+              onClick={() => navigate("/dashboard/integration/import-export")}
               variant="outline"
               size="sm"
             >
@@ -512,7 +512,7 @@ import {
               Import/Export
             </Button>
             <Button
-              onClick={() => navigate("/integration/new-source")}
+              onClick={() => navigate("/dashboard/integration/new-source")}
               variant="primary"
               size="sm"
             >
@@ -890,7 +890,7 @@ import {
               </Button>
             )}
             <Button
-              onClick={() => navigate("/integration/new-source")}
+              onClick={() => navigate("/dashboard/integration/new-source")}
               variant="primary"
               size="sm"
               icon={<MdAdd className="w-4 h-4" />}
@@ -910,7 +910,7 @@ import {
                 : "Get started by adding your first data source"
             }
             action={
-              <Button onClick={() => navigate("/integration/new-source")} variant="primary">
+              <Button onClick={() => navigate("/dashboard/integration/new-source")} variant="primary">
                 <MdAdd className="w-4 h-4 mr-2" />
                 Add Data Source
               </Button>
@@ -994,7 +994,7 @@ import {
                         </Tooltip>
                         <Tooltip content="Edit">
                           <Button
-                            onClick={() => navigate(`/integration/edit-source/${ds.id}`)}
+                            onClick={() => navigate(`/dashboard/integration/edit-source/${ds.id}`)}
                             variant="outline"
                             size="sm"
                           >
@@ -1021,7 +1021,7 @@ import {
                         </Tooltip>
                       </div>
                       <Button
-                        onClick={() => navigate(`/integration/view/${ds.id}`)}
+                        onClick={() => navigate(`/dashboard/integration/view/${ds.id}`)}
                         variant="primary"
                         size="sm"
                       >
@@ -1120,7 +1120,7 @@ import {
                         </Tooltip>
                         <Tooltip content="Edit">
                           <Button
-                            onClick={() => navigate(`/integration/edit-source/${ds.id}`)}
+                            onClick={() => navigate(`/dashboard/integration/edit-source/${ds.id}`)}
                             variant="outline"
                             size="sm"
                           >
@@ -1146,7 +1146,7 @@ import {
                           </Button>
                         </Tooltip>
                         <Button
-                          onClick={() => navigate(`/integration/view/${ds.id}`)}
+                          onClick={() => navigate(`/dashboard/integration/view/${ds.id}`)}
                           variant="primary"
                           size="sm"
                         >

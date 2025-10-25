@@ -431,7 +431,7 @@ const SyncHistory = () => {
             <span>Refresh</span>
           </Button>
           <Button 
-            onClick={() => navigate('/integration/data-sync')} 
+            onClick={() => navigate('/dashboard/integration/data-sync')} 
             variant="outline"
             className="flex items-center space-x-2"
           >

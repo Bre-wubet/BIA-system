@@ -389,7 +389,7 @@ const DataSourceEdit = () => {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Button
-              onClick={() => navigate(`/integration/view/${id}`)}
+              onClick={() => navigate(`/dashboard/integration/view/${id}`)}
               variant="outline"
               size="sm"
               icon={<MdArrowBack className="w-4 h-4" />}

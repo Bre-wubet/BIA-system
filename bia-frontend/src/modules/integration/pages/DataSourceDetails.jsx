@@ -383,7 +383,7 @@ const DataSourceDetails = () => {
             <span>Refresh</span>
           </Button>
           <Button
-            onClick={() => navigate('/integration/data-sync')}
+            onClick={() => navigate('/dashboard/dashboard/integration/data-sync')}
             variant="outline"
             className="flex items-center space-x-2"
           >
@@ -391,7 +391,7 @@ const DataSourceDetails = () => {
             <span>Back</span>
           </Button>
           <Button
-            onClick={() => navigate(`/integration/edit-source/${id}`)}
+            onClick={() => navigate(`/dashboard/integration/edit-source/${id}`)}
             variant="outline"
             className="flex items-center space-x-2"
           >
