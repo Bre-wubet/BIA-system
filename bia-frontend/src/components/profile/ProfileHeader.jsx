@@ -2,6 +2,7 @@ import React from 'react';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Tooltip from '../../components/ui/Tooltip';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 import { 
   MdAccountCircle, 
   MdEdit, 
@@ -38,9 +39,13 @@ const ProfileHeader = ({
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
               {imagePreview || profile.avatar ? (
                 <img 
-                  src={imagePreview || (profile.avatar.startsWith('http') ? profile.avatar : `http://localhost:3000${profile.avatar}`)} 
+                  src={imagePreview || getAvatarUrl(profile.avatar)} 
                   alt="Profile" 
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error('Failed to load avatar image:', profile.avatar);
+                    e.target.style.display = 'none';
+                  }}
                 />
               ) : (
                 <MdAccountCircle className="w-10 h-10 text-blue-600" />

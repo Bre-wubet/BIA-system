@@ -185,6 +185,24 @@ export const authAPI = {
     }
   },
 
+  // Upload avatar
+  uploadAvatar: async (avatarFile) => {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+      
+      const response = await apiClient.post('/auth/upload-avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Get user statistics (admin only)
   getUserStats: async () => {
     try {

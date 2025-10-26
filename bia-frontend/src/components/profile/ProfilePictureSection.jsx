@@ -1,5 +1,6 @@
 import React from 'react';
 import Button from '../../components/ui/Button';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 import { MdAccountCircle, MdUpload, MdDelete } from 'react-icons/md';
 
 const ProfilePictureSection = ({ 
@@ -17,9 +18,13 @@ const ProfilePictureSection = ({
           <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
             {imagePreview || profile.avatar ? (
               <img 
-                src={imagePreview || (profile.avatar.startsWith('http') ? profile.avatar : `http://localhost:3000${profile.avatar}`)} 
+                src={imagePreview || getAvatarUrl(profile.avatar)} 
                 alt="Profile" 
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('Failed to load avatar image:', profile.avatar);
+                  e.target.style.display = 'none';
+                }}
               />
             ) : (
               <MdAccountCircle className="w-12 h-12 text-gray-400" />

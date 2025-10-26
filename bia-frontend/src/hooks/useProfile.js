@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { authAPI } from '../api/authApi';
 
 export const useProfile = () => {
   const { user, updateProfile, changePassword } = useAuth();
@@ -150,25 +151,7 @@ export const useProfile = () => {
       
       // If there's a new image file, upload it first
       if (imageFile) {
-        const token = localStorage.getItem('accessToken');
-        
-        const formData = new FormData();
-        formData.append('avatar', imageFile);
-        
-        const uploadResponse = await fetch('http://localhost:3000/api/auth/upload-avatar', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
-        
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text();
-          throw new Error(`Failed to upload image: ${errorText}`);
-        }
-        
-        const uploadResult = await uploadResponse.json();
+        const uploadResult = await authAPI.uploadAvatar(imageFile);
         if (uploadResult.success) {
           updatedProfile.avatar = uploadResult.data.avatarUrl;
         }
